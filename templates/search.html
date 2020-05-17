@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+Search Result:
+    <div>
+        {% for r in result %}
+            <li class="opinion" style="list-style: none">
+                {{ opinion_div(r) }}
+            </li>
+        {% endfor %}
+    </div>
+
+
+{% endblock %}

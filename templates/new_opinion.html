@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <div>
+        <form action="/new_opinion/" method="post">
+            <textarea id="new_opinion_text" placeholder="Type in a statement you want to be public here." name="text"
+                      maxlength="{{ OPINION_LENGTH }}"
+                      style="resize: none;"></textarea>
+            <br>
+            <div>
+                <div id="chars_left" style="margin-right: 50px">{{ OPINION_LENGTH }} characters left</div>
+            </div>
+            <button class="button" style="float: right;" type="submit">Submit</button>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function(event) {
+            let txt = document.getElementById("new_opinion_text");
+            let c = document.getElementById("chars_left");
+            function show_chars_left(ev) {
+                c.innerText = ({{ OPINION_LENGTH }} -txt.value.length) + ' characters left.';
+            }
+            txt.addEventListener("keypress", show_chars_left);
+            txt.addEventListener("keyup", show_chars_left);
+
+        });
+
+
+    </script>
+
+{% endblock %}
