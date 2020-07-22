@@ -5,6 +5,7 @@ from flask import request, session, redirect, url_for, escape
 from flask import jsonify
 
 from flask_uploads import (UploadSet,configure_uploads)
+import dbclient as db
 app = Flask(__name__)
 
 app.secret_key = b'yu8Qy4xkBdCvMSJQiZG8k3Vbdv4GUf'
@@ -12,46 +13,26 @@ app.secret_key = b'yu8Qy4xkBdCvMSJQiZG8k3Vbdv4GUf'
 DATABASE = '/path/to/database.db'
 
 
-def add_user(username, password):
-    salt = bcrypt.gensalt(12)
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
-    with database.session() as db_session:
-        db_session.run("CREATE(: User {username: $username, password: $password} )",
-                       username=username, password=hashed_password)
-
-
-def get_user(username):
-    with database.session() as db_session:
-        return db_session.run("MATCH(u : User {username: $username} )"
-                              "RETURN u",
-                              username=username)
-
 
 def user_exists(username):
-    return bool(get_user(username))
+    return bool(db.get_user(username))
 
 
 def check_password(username, password):
-    with database.session() as db_session:
-        result = db_session.run("MATCH (u:User { username : $username} )"
-                                "RETURN u",
-                                username=username)
-        user = result.single()['u']
-        hashed_password = user['password']  # .encode('utf-8')
-        return bcrypt.checkpw(password.encode('utf-8'), hashed_password)
+    hashed_password = db.get_user(username)['password']  # .encode('utf-8')
+    return bcrypt.checkpw(password.encode('utf-8'), hashed_password)
 
 
-def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
-    return db
+def logged_in():
+    return session['username'] is not None
+
+def current_user():
+    return session['username']
+
 
 @app.teardown_appcontext
 def close_connection(exception):
-    db = getattr(g, '_database', None)
-    if db is not None:
-        db.close()
+    db.tear_down_connection()
 
 photos = UploadSet('photos', default_dest=lambda app: app.instance_path)
 configure_uploads(app,photos)
@@ -60,12 +41,13 @@ configure_uploads(app,photos)
 def upload():
     if request.method == 'POST' and 'photo' in request.files:
         filename = photos.save(request.files['photo'])
+        db.send_pic(filename)
         return "upload successfull"
     return render_template('upload.html') 
 
 @app.route('/photo/<id>')
 def show(id):
-    photo = Photo.load(id)
+    photo = db.get_pic(id)
     if photo is None:
         abort(404)
     url = photos.url(photo.filename)
@@ -126,7 +108,7 @@ def new_user():
         p = request.form['password']
         if len(u) < 30 or len(p) < 30:
             if user_exists(u):
-                add_user(u, p)
+                db.add_user(u, p)
                 session['username'] = u
                 return redirect(url_for('home'))
             else:

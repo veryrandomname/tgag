@@ -34,8 +34,13 @@ user_dict = load_obj("users")
 if not user_dict:
     user_dict = {}
 
+picture_dict = load_obj("pictures")
+if not picture_dict:
+    picture_dict = {"n":0}
+
 print(ratings_dict)
 print(user_dict)
+print(picture_dict)
 
 
 def add_rating(itemID, userID, rating):
@@ -98,7 +103,23 @@ def get_top_n(userID):
 
 # save_obj(ratings_dict,"ratings")
 
-def handle_msg(msg):
+def handle_msg(msg, conn):
+    if msg == "add_user":
+        salt = bcrypt.gensalt(12)
+        password = msg["password"]
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+        user_dict[msg["username"]] = hashed_password
+    elif msg == "get_user":
+        conn.send(user_dict[msg["username"]])
+    elif msg == "send_rating":
+        add_rating(msg["item"], msg["username"], msg["rating"])
+    elif msg == "get_top_n":
+        conn.send(get_top_n(msg["username"]))
+    elif msg == "get_pic":
+        conn.send(picture_dict[msg["item"]])
+    elif msg == "send_pic":
+        picture_dict[picture_dict["n"]] = msg["filename"]
+        picture_dict["n"] +=1
     pass
 
 def on_new_client(conn):
@@ -112,7 +133,7 @@ def on_new_client(conn):
                 conn.close()
                 break
 
-            handle_msg(msg)
+            handle_msg(msg, conn)
         except EOFError:
             print("lost connection")
             conn.close()

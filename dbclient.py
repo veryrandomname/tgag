@@ -12,10 +12,20 @@ def get_user(username):
     conn.send({'msg': 'get_user', 'username' : username})
     return conn.recv()
 
-def send_like(username, like):
-    conn.send({'msg': 'send_like', 'username' : username, 'like' : like})
+def send_rating(item, username, rating):
+    conn.send({'msg': 'send_rating', 'username' : username, 'item' : item, 'rating' : rating})
 
-def get_top
+def get_top_n(item,username,n=10):
+    conn.send({'msg': 'get_top_n', 'username' : username})
+    return conn.recv()
+
+def get_pic(item):
+    conn.send({'msg': 'get_pic', 'item' : item})
+    return conn.recv()
+
+def send_pic(filename):
+    conn.send({'msg': 'send_pic', 'filename' : filename})
+
 
 def tear_down_connection():
     conn.close()
