@@ -49,7 +49,7 @@ def add_rating(itemID, userID, rating):
     ratings_dict['rating'] += [rating]
 
 
-def calculate_predictions(username):
+def calculate_predictions(userID):
     df = pd.DataFrame(data=ratings_dict)
     reader = Reader(rating_scale=(1, 3))
     data = Dataset.load_from_df(df[['userID', 'itemID', 'rating']], reader)
@@ -57,7 +57,7 @@ def calculate_predictions(username):
     algo = SVD()
     algo.fit(trainset)
 
-    iuid = trainset.to_inner_uid(username)
+    iuid = trainset.to_inner_uid(userID)
     #return [algo.predict(userID,iid) for iid in trainset.all_items()]
     return [algo.estimate(iuid, iiid) for iiid in trainset.all_items()]
 
@@ -93,9 +93,11 @@ print(calculate_predictions('user_foo'))
 print(calculate_predictions('faggot'))
 
 
-def get_top_n(userID):
+def get_top_n(userID, n = 10):
     print(calculate_predictions(2))
-    return get_top_n_from_predictions(calculate_predictions())[userID]
+    r = calculate_predictions(userID).sort(key=lambda x: x[1], reverse=True)
+    return r[:n]
+    #return get_top_n_from_predictions(calculate_predictions())[userID]
 
 #add_rating(2, 3, 1)
 #print(get_top_n(2))
