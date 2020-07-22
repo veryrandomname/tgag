@@ -5,12 +5,41 @@ from flask import request, session, redirect, url_for, escape
 from flask import jsonify
 
 from flask_uploads import (UploadSet,configure_uploads)
-import sqlite3
 app = Flask(__name__)
 
 app.secret_key = b'yu8Qy4xkBdCvMSJQiZG8k3Vbdv4GUf'
 
 DATABASE = '/path/to/database.db'
+
+
+def add_user(username, password):
+    salt = bcrypt.gensalt(12)
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+    with database.session() as db_session:
+        db_session.run("CREATE(: User {username: $username, password: $password} )",
+                       username=username, password=hashed_password)
+
+
+def get_user(username):
+    with database.session() as db_session:
+        return db_session.run("MATCH(u : User {username: $username} )"
+                              "RETURN u",
+                              username=username)
+
+
+def user_exists(username):
+    return bool(get_user(username))
+
+
+def check_password(username, password):
+    with database.session() as db_session:
+        result = db_session.run("MATCH (u:User { username : $username} )"
+                                "RETURN u",
+                                username=username)
+        user = result.single()['u']
+        hashed_password = user['password']  # .encode('utf-8')
+        return bcrypt.checkpw(password.encode('utf-8'), hashed_password)
+
 
 def get_db():
     db = getattr(g, '_database', None)
