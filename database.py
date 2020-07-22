@@ -146,6 +146,7 @@ listener = Listener(address, authkey=b'secret password')
 def exit_handler():
     print("saving shit")
     save_obj(ratings_dict,"ratings")
+    save_obj(picture_dict, "pictures")
     listener.close()
 
 
