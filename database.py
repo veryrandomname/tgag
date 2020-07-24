@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+import bcrypt
 from surprise import Reader, SVD, Dataset
 import pandas as pd
 import pickle
@@ -27,16 +28,20 @@ def load_obj(name):
 
 ratings_dict = load_obj("ratings")
 if not ratings_dict:
-    ratings_dict = {'itemID': [1, 1, 1, 2, 2],
-                    'userID': [9, 32, 2, 45, 'user_foo'],
-                    'rating': [3, 2, 1, 3, 1]}
+    ratings_dict = {'itemID': [],
+                    'userID': [],
+                    'rating': []}
+
+    #ratings_dict = {'itemID': [1, 1, 1, 2, 2],
+    #                'userID': [9, 32, 2, 45, 'user_foo'],
+    #                'rating': [3, 2, 1, 3, 1]}
 user_dict = load_obj("users")
 if not user_dict:
     user_dict = {}
 
 picture_dict = load_obj("pictures")
 if not picture_dict:
-    picture_dict = {"n":0}
+    picture_dict = {"n":0, "unknown_pictures" : {}, "pictures" : {}}
 
 print(ratings_dict)
 print(user_dict)
@@ -56,73 +61,88 @@ def calculate_predictions(userID):
     trainset = data.build_full_trainset()
     algo = SVD()
     algo.fit(trainset)
-
     iuid = trainset.to_inner_uid(userID)
     #return [algo.predict(userID,iid) for iid in trainset.all_items()]
-    return [algo.estimate(iuid, iiid) for iiid in trainset.all_items()]
+    return [(iiid, algo.estimate(iuid, iiid)) for iiid in trainset.all_items()]
+
+def pick_n_from_dict(dict, n=10):
+    result = []
+    i = 0
+    for key in dict:
+        result += [key]
+        i +=1
+        if i >= n:
+            break
+
+    return result
+
+def pick_n_unknown_memes(n=10):
+    return pick_n_from_dict(picture_dict["unknown_pictures"],n)
+
+def random_memes(n=10):
+    return pick_n_from_dict(picture_dict["pictures"],n)
 
 
-def get_top_n_from_predictions(predictions, n=10):
-    """Return the top-N recommendation for each user from a set of predictions.
-
-    Args:
-        predictions(list of Prediction objects): The list of predictions, as
-            returned by the test method of an algorithm.
-        n(int): The number of recommendation to output for each user. Default
-            is 10.
-
-    Returns:
-    A dict where keys are user (raw) ids and values are lists of tuples:
-        [(raw item id, rating estimation), ...] of size n.
-    """
-
-    # First map the predictions to each user.
-    top_n = defaultdict(list)
-    for uid, iid, true_r, est, _ in predictions:
-        top_n[uid].append((iid, est))
-
-    # Then sort the predictions for each user and retrieve the k highest ones.
-    for uid, user_ratings in top_n.items():
-        user_ratings.sort(key=lambda x: x[1], reverse=True)
-        top_n[uid] = user_ratings[:n]
-
-    return top_n
-
-
-print(calculate_predictions('user_foo'))
-print(calculate_predictions('faggot'))
-
-
-def get_top_n(userID, n = 10):
-    print(calculate_predictions(2))
-    r = calculate_predictions(userID).sort(key=lambda x: x[1], reverse=True)
-    return r[:n]
+def get_top_n(username, n = 10):
+    #print(calculate_predictions(2))
+    #print(calculate_predictions(2))
+    try:
+        r = calculate_predictions(username)
+        print(r)
+    except ValueError:
+        print("Vaöuie")
+        return random_memes(n)
+    r = [(item, rating) for (item, rating) in r if item not in user_dict[username]["memes_seen"]]
+    r.sort(key=lambda x: x[1], reverse=True)
+    r = [ item for (item,_) in r ]
+    print("r", r)
+    if not r:
+        return pick_n_unknown_memes(n)
+    else:
+        return r[:n]
     #return get_top_n_from_predictions(calculate_predictions())[userID]
 
 #add_rating(2, 3, 1)
 #print(get_top_n(2))
 
 
+def user_has_seen(username, itemID):
+    #print(user_dict)
+    user_dict[username]["memes_seen"][itemID] = True
+    if itemID in picture_dict["unknown_pictures"]:
+        del picture_dict["unknown_pictures"][itemID]
+    #print(user_dict)
+
 # save_obj(ratings_dict,"ratings")
 
 def handle_msg(msg, conn):
-    if msg == "add_user":
+    print("buuts", msg)
+    m = msg["msg"]
+    if m == "add_user":
         salt = bcrypt.gensalt(12)
         password = msg["password"]
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
-        user_dict[msg["username"]] = hashed_password
-    elif msg == "get_user":
-        conn.send(user_dict[msg["username"]])
-    elif msg == "send_rating":
+        user_dict[msg["username"]] = { "hashed_password" : hashed_password, "memes_seen" : {} }
+        print(user_dict)
+    elif m == "get_user":
+        if msg["username"] in user_dict:
+            conn.send(user_dict[msg["username"]])
+        else:
+            conn.send(None)
+    elif m == "send_rating":
+        print("dick me up")
+        user_has_seen(msg["username"], msg["item"])
         add_rating(msg["item"], msg["username"], msg["rating"])
-    elif msg == "get_top_n":
+    elif m == "get_top_n":
         conn.send(get_top_n(msg["username"]))
-    elif msg == "get_pic":
-        conn.send(picture_dict[msg["item"]])
-    elif msg == "send_pic":
-        picture_dict[picture_dict["n"]] = msg["filename"]
+    elif m == "get_pic":
+        conn.send(picture_dict["pictures"][int(msg["item"])])
+    elif m == "send_pic":
+        print("naked")
+        itemID = picture_dict["n"]
+        picture_dict["pictures"][itemID] = msg["filename"]
+        picture_dict["unknown_pictures"][itemID] = True
         picture_dict["n"] +=1
-    pass
 
 def on_new_client(conn):
     while True:
@@ -149,6 +169,7 @@ def exit_handler():
     print("saving shit")
     save_obj(ratings_dict,"ratings")
     save_obj(picture_dict, "pictures")
+    save_obj(user_dict,"users")
     listener.close()
 
 

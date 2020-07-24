@@ -564,7 +564,7 @@
 <div class="topnav">
     <a class="active" href="/">Home</a>
     {% if logged_in() %}
-        <a href="/new_opinion">New Opinion</a>
+        <a href="/upload">Upload</a>
         <a href="/logout">Logout</a>
     {% else %}
         <a href="/login">Login</a>
@@ -593,6 +593,11 @@
 
 
 <script>
+    function rate(itemID, rating) {
+        sendData({itemID: itemID, rating: rating}, "/rate_meme/");
+        //location.reload();
+    }
+
     function jsonToHtml(data, current_oid, vote) {
         ul = document.getElementById("reason_list");
 
@@ -618,11 +623,6 @@
         }
     }
 
-    function connection_handler(from_oid, to_id, vote) {
-        return function () {
-            sendData({from: from_oid, to: to_id, vote: vote}, '/connect/');
-        }
-    }
 
     function sendData(data, url) {
         var XHR = new XMLHttpRequest();

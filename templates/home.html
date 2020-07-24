@@ -1,102 +1,27 @@
 {% extends "base.html" %}
 
 
+
+
 {% block content %}
-    {% if opinion %}
-        <h1 id="top_opinion">{{ opinion["text"] }}</h1>
 
-        {% set likes_main = likes(opinion) %}
-        {% set dislikes_main = dislikes(opinion) %}
+    {% if memeurl %}
+        <img src="{{ memeurl }}">
 
+        {% if logged_in() %}
 
-        <div style="display: flex">
-        <div id="like" onclick="vote({{ current_oid }} , 1)" title="{{ True }}" style="color: {{ "black" if current_user_voted_opinion_1(opinion) else COLOR_5 }}">
-            <i class="fa fa-thumbs-up"></i>
-            {{ likes_main }}
-        </div>
-        <div id="dislike" onclick="vote({{ current_oid }} , -1)" title="{{ False }}" style="color: {{ "black" if current_user_voted_opinion_minus_1(opinion) else COLOR_5 }} ">
-            <i class="fa fa-thumbs-down"></i>
-            {{ dislikes_main }}
-        </div>
-        </div>
+            <div class="small_like" onclick="rate({{ memeID }} , 2)" title="Like"  }}">
+                like
+            </div>
+            <div class="small_dislike" onclick="rate({{ memeID }} , 1)" title="Dislike" }}">
+                dislike
+            </div>
 
-        <div id="opinion_bar">
-            <div id="true_bar" style="width: {{ likes_main / (likes_main + dislikes_main) * 100 if (likes_main + dislikes_main) > 0 else 0}}%;"></div>
-            <div id="false_bar"></div>
-        </div>
-
-        <div class="in">
-            Reasons:
-            <ul id="in_list">
-                {% for (o,stats,color) in input_opinions %}
-                    <li class="opinion influence"
-                        {% set pro = stats[0] %}
-                        {% set con = stats[1] %}
-                        style="margin-left: {{ con/(pro+con) * 50 if (pro+con) > 0 else 50 }}px; background-color: rgb{{ color }} ">
-
-                        {{ opinion_div(o) }}
-                        <div style="float: bottom; height: 20px;">
-                            <div class="vote_pro_implication" onclick="vote_implication{{ o['oid'], current_oid, 1 }}"
-                                 style="color: {{ COLOR_4 if current_user_voted_implication_1(o['oid'], current_oid) else "black" }}"
-                                 title="Pro">
-                                <i class="fa fa-caret-left"></i>
-                                {{  pro }}
-                            </div>
-                            <div class="vote_con_implication" onclick="vote_implication{{ o['oid'], current_oid, -1 }}"
-                                 style="color: {{ COLOR_4 if current_user_voted_implication_minus_1(o['oid'], current_oid) else "black" }} "
-                                title="Con">
-                                {{ con }}
-                                <i class="fa fa-caret-right"></i>
-                            </div>
-                        </div>
-                    </li>
-                {% endfor %}
-            </ul>
-            <input type="text" id="reason_search" class="search" onkeyup="searchFunction({{ current_oid }})"
-                   placeholder="Add a reason"
-                   title="If your reason is not here, create a new one with the 'New Opinion' button at the top.">
-
-            <ul id="reason_list" class="searchList">
-
-            </ul>
-
-            <script>
-                search = document.getElementById("reason_search");
-                list = document.getElementById("reason_list");
-
-                function listener(ev){
-                    if (ev.keyCode == 27){
-                        this.value="";
-                        list.innerHTML = "";
-                    }
-                }
-
-                search.addEventListener("keydown", listener)
-            </script>
-
-        </div>
-
-
-        This opinion influences:
-
-        <ul id="out_list" style="list-style: none">
-        {% for (o, stats) in output_opinions %}
-            <li class="opinion out">
-                {{ opinion_div(o) }}
-            </li>
-        {% endfor %}
-        </ul>
-
+        {% endif %}
 
     {% else %}
-        Popular opinions:
-        {% for result in popular %}
-            <li class="opinion" style="list-style: none">
-                {{ opinion_div(result) }}
-            </li>
-        {% endfor %}
+        You have seen all the memes we have!
     {% endif %}
-
 
 
 {% endblock %}

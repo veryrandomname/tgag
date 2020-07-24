@@ -1,84 +1,90 @@
+import os
+
 from flask import (Flask,request,render_template,g)
 
 from flask import request, session, redirect, url_for, escape
 
+import bcrypt
+
 from flask import jsonify
 
 from flask_uploads import (UploadSet,configure_uploads)
-import dbclient as db
+import dbclient
 app = Flask(__name__)
 
 app.secret_key = b'yu8Qy4xkBdCvMSJQiZG8k3Vbdv4GUf'
 
-DATABASE = '/path/to/database.db'
 
-
+def get_db():
+    """Opens a new database connection if there is none yet for the
+    current application context.
+    """
+    if not hasattr(g, 'db'):
+        g.db = dbclient.MyClient()
+    return g.db
 
 def user_exists(username):
-    return bool(db.get_user(username))
+    return bool(get_db().get_user(username))
 
 
 def check_password(username, password):
-    hashed_password = db.get_user(username)['password']  # .encode('utf-8')
-    return bcrypt.checkpw(password.encode('utf-8'), hashed_password)
+    user = get_db().get_user(username)  # .encode('utf-8')
+    return user and bcrypt.checkpw(password.encode('utf-8'), user["hashed_password"])
 
 
 def logged_in():
-    return session['username'] is not None
+    return 'username' in session
+
+app.jinja_env.globals.update(logged_in=logged_in)
+
 
 def current_user():
     return session['username']
 
 
 @app.teardown_appcontext
-def close_connection(exception):
-    db.tear_down_connection()
+def close_db(exception):
+    if hasattr(g, 'db'):
+        g.db.tear_down_connection()
 
-photos = UploadSet('photos', default_dest=lambda app: app.instance_path)
+photos = UploadSet('photos', default_dest=lambda app: app.root_path + "/uploads")
 configure_uploads(app,photos)
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if request.method == 'POST' and 'photo' in request.files:
         filename = photos.save(request.files['photo'])
-        db.send_pic(filename)
+        get_db().send_pic(filename)
         return "upload successfull"
     return render_template('upload.html') 
 
 @app.route('/photo/<id>')
 def show(id):
-    photo = db.get_pic(id)
+    photo = get_db().get_pic(id)
     if photo is None:
         abort(404)
-    url = photos.url(photo.filename)
-    return render_template('show.html', url=url, photo=photo)
+    url = photos.url(photo)
+    return render_template('show.html', url=url, itemID=id)
 
 
 @app.route('/', methods=['GET'])
 def home():
-    return render_template('home.html', popular=front_page_opinions())
-
-
-@app.route('/opinion/<oid_str>')
-def opinion(oid_str):
-    if oid_str:
-        return render_opinion(int(oid_str))
-    else:
-        return render_template('home.html')
-
-
-@app.route('/new_opinion/', methods=['GET', 'POST'])
-def new_opinion():
-    if request.method == 'POST' and logged_in():
-        text = request.form['text']
-        oid = add_opinion(text, current_user())
-        vote_opinion(oid, 1, current_user())
-        if oid:
-            return redirect(url_for('opinion', oid_str=oid))
+    if logged_in():
+        top = get_db().get_top_n(current_user())
+        print(top)
+        if top:
+            itemID = top[0]
+            print(itemID)
+            filename = get_db().get_pic(itemID)
+            print(filename)
+            url = photos.url(filename)
+            return render_template('home.html', memeID = itemID, memeurl = url )
         else:
-            return "Your opinion is too long. max. " + str(OPINION_LENGTH) + " signs."
+            return render_template('home.html' )
     else:
-        return render_template("new_opinion.html")
+        return render_template("home.html")
+    #return render_template('home.html', popular=front_page_opinions())
+
 
 
 @app.route('/vote_opinion/', methods=['POST'])
@@ -91,6 +97,16 @@ def vote_opinion_handler():
     else:
         return "not logged in, bitch"
 
+
+@app.route('/rate_meme/', methods=['POST'])
+def rating_handler():
+    itemID = int(request.form['itemID'])
+    rating = int(request.form['rating'])
+    if logged_in():
+        get_db().send_rating(itemID, rating, current_user())
+        return "suckcess"
+    else:
+        return "not logged in, bitch"
 
 
 
@@ -107,8 +123,8 @@ def new_user():
         u = request.form['username']
         p = request.form['password']
         if len(u) < 30 or len(p) < 30:
-            if user_exists(u):
-                db.add_user(u, p)
+            if not user_exists(u):
+                get_db().add_user(u, p)
                 session['username'] = u
                 return redirect(url_for('home'))
             else:
