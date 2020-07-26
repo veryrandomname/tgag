@@ -3,7 +3,7 @@ import os
 from flask import (Flask,request,render_template,g)
 
 from flask import request, session, redirect, url_for, escape
-
+from flask import jsonify
 import bcrypt
 
 from flask import jsonify
@@ -58,6 +58,24 @@ def upload():
         return "upload successfull"
     return render_template('upload.html') 
 
+
+@app.route('/top_json')
+def top_json():
+    if logged_in():
+        top = get_db().get_top_n(current_user())
+        return jsonify({"top_rec" : top})
+    else:
+        return "Error", 500
+
+@app.route('/top_urls_json')
+def top_urls_json():
+    if logged_in():
+        top = get_db().get_top_n(current_user(), 20)
+        urls = [ [itemID, photos.url(get_db().get_pic(itemID))] for itemID in top ]
+        return jsonify({"top_rec" : urls})
+    else:
+        return "Error", 500
+
 @app.route('/photo/<id>')
 def show(id):
     photo = get_db().get_pic(id)
@@ -87,18 +105,7 @@ def home():
 
 
 
-@app.route('/vote_opinion/', methods=['POST'])
-def vote_opinion_handler():
-    oid = int(request.form['oid'])
-    vote = int(request.form['vote'])
-    if logged_in():
-        vote_opinion(oid, vote, current_user())
-        return "suckcess"
-    else:
-        return "not logged in, bitch"
-
-
-@app.route('/rate_meme/', methods=['POST'])
+@app.route('/rate_meme', methods=['POST'])
 def rating_handler():
     itemID = int(request.form['itemID'])
     rating = int(request.form['rating'])
@@ -107,6 +114,18 @@ def rating_handler():
         return "suckcess"
     else:
         return "not logged in, bitch"
+
+
+
+@app.route('/rate_meme_app', methods=['POST'])
+def rating_app_handler():
+    itemID = int(request.json['itemID'])
+    rating = int(request.json['rating'])
+    if logged_in():
+        get_db().send_rating(itemID, rating, current_user())
+        return jsonify()
+    else:
+        return jsonify(),400
 
 
 
@@ -120,6 +139,8 @@ def check_login():
 @app.route('/new_user', methods=['GET', 'POST'])
 def new_user():
     if request.method == 'POST':
+        print(request)
+        print(request.form)
         u = request.form['username']
         p = request.form['password']
         if len(u) < 30 or len(p) < 30:
@@ -132,6 +153,35 @@ def new_user():
         else:
             return "username or password are longer than 30 signs"
     return render_template("new_user.html")
+
+
+@app.route('/new_app_user', methods=['POST'])
+def new_app_user():
+    print(request)
+    print(request.json)
+    u = request.json['username']
+    p = request.json['password']
+    if len(u) < 30 or len(p) < 30:
+        if not user_exists(u):
+            get_db().add_user(u, p)
+            session['username'] = u
+            return jsonify()
+        else:
+            return jsonify(), 500
+    else:
+        return jsonify(), 400
+
+
+@app.route('/login_app', methods=['POST'])
+def login_app():
+    print(request.json)
+    u = request.json['username']
+    p = request.json['password']
+    if check_password(u, p):
+        session['username'] = u
+        return jsonify()
+    else:
+        return jsonify(), 400
 
 
 @app.route('/login', methods=['GET', 'POST'])

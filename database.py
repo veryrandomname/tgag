@@ -63,6 +63,7 @@ def calculate_predictions(userID):
     algo.fit(trainset)
     iuid = trainset.to_inner_uid(userID)
     #return [algo.predict(userID,iid) for iid in trainset.all_items()]
+    print("Halloo hier", picture_dict, trainset.all_items())
     return [(iiid, algo.estimate(iuid, iiid)) for iiid in trainset.all_items()]
 
 def pick_n_from_dict(dict, n=10):
@@ -92,9 +93,9 @@ def get_top_n(username, n = 10):
     except ValueError:
         print("Vaöuie")
         return random_memes(n)
-    r = [(item, rating) for (item, rating) in r if item not in user_dict[username]["memes_seen"]]
     r.sort(key=lambda x: x[1], reverse=True)
-    r = [ item for (item,_) in r ]
+    r = [ item for (item,_) in r ] + pick_n_unknown_memes(n)
+    r = [ item for item in r if item not in user_dict[username]["memes_rated"]]
     print("r", r)
     if not r:
         return pick_n_unknown_memes(n)
@@ -106,9 +107,9 @@ def get_top_n(username, n = 10):
 #print(get_top_n(2))
 
 
-def user_has_seen(username, itemID):
+def user_has_rated(username, itemID):
     #print(user_dict)
-    user_dict[username]["memes_seen"][itemID] = True
+    user_dict[username]["memes_rated"][itemID] = True
     if itemID in picture_dict["unknown_pictures"]:
         del picture_dict["unknown_pictures"][itemID]
     #print(user_dict)
@@ -119,30 +120,33 @@ def handle_msg(msg, conn):
     print("buuts", msg)
     m = msg["msg"]
     if m == "add_user":
-        salt = bcrypt.gensalt(12)
-        password = msg["password"]
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
-        user_dict[msg["username"]] = { "hashed_password" : hashed_password, "memes_seen" : {} }
-        print(user_dict)
+        if "username" in msg and msg["username"] in user_dict and "password" in msg:
+            salt = bcrypt.gensalt(12)
+            password = msg["password"]
+            hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+            user_dict[msg["username"]] = { "hashed_password" : hashed_password, "memes_rated" : {} }
+            print(user_dict)
     elif m == "get_user":
-        if msg["username"] in user_dict:
+        if "username" in msg and msg["username"] in user_dict:
             conn.send(user_dict[msg["username"]])
         else:
             conn.send(None)
     elif m == "send_rating":
-        print("dick me up")
-        user_has_seen(msg["username"], msg["item"])
-        add_rating(msg["item"], msg["username"], msg["rating"])
+        if "username" in msg and "item" in msg and "rating" in msg:
+            print("dick me up")
+            user_has_rated(msg["username"], msg["item"])
+            add_rating(msg["item"], msg["username"], msg["rating"])
     elif m == "get_top_n":
         conn.send(get_top_n(msg["username"]))
     elif m == "get_pic":
         conn.send(picture_dict["pictures"][int(msg["item"])])
     elif m == "send_pic":
-        print("naked")
-        itemID = picture_dict["n"]
-        picture_dict["pictures"][itemID] = msg["filename"]
-        picture_dict["unknown_pictures"][itemID] = True
-        picture_dict["n"] +=1
+        if "filename" in msg:
+            print("naked")
+            itemID = picture_dict["n"]
+            picture_dict["pictures"][itemID] = msg["filename"]
+            picture_dict["unknown_pictures"][itemID] = True
+            picture_dict["n"] +=1
 
 def on_new_client(conn):
     while True:
