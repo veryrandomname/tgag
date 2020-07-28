@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    {% for (item_id, img_url,rating) in uploads %}
+        <img src="{{ img_url }}">
+        Rating: {{ rating }}
+    {% endfor %}
+
+
+
+{% endblock %}

@@ -405,38 +405,6 @@
             }
         }
 
-
-        .search {
-            background-position: 10px 12px;
-            background-repeat: no-repeat;
-            font-size: 16px;
-            padding: 12px 20px 12px 40px;
-            border: 1px solid #ddd;
-            margin-bottom: 12px;
-        }
-
-        .searchList {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-            word-break: break-word;
-        }
-
-        .searchList li a {
-            border: 1px solid #ddd;
-            margin-top: -1px; /* Prevent double borders */
-            background-color: #f6f6f6;
-            padding: 12px;
-            text-decoration: none;
-            font-size: 18px;
-            color: black;
-            display: block
-        }
-
-        .searchList li a:hover:not(.header) {
-            background-color: #eee;
-        }
-
         .container {
             width: 80%;
             height: 200px;
@@ -450,16 +418,13 @@
         }
 
 
-        .out {
-            margin-left: 10%;
-        }
-
         #dislike {
             margin-left: 30px;
         }
 
         #like, #dislike {
             font-size: large;
+
         }
 
         #opinion_bar {
@@ -476,52 +441,11 @@
             border-style: none;
         }
 
-        .opinion {
-            border-radius: 5px;
-            background: #70a6cd;
-            padding: 20px;
-            margin: 10px;
-            max-width: 600px;
-            font-size: large;
-            color: white;
-            word-break: break-word;
+        #meme {
+            max-height: 800px;
+            max-width: 400px;
         }
 
-        #top_opinion {
-            word-break: break-word;
-        }
-
-        .opinion a {
-            text-decoration: none;
-            color: black;
-        }
-
-        .influence a {
-            color: white;
-        }
-
-        #in_list, #out_list {
-            list-style: none;
-            padding-left: 0;
-            margin-left: 0;
-        }
-
-        .out {
-            float: left;
-        }
-
-        .vote_pro_implication, .vote_con_implication {
-            cursor: pointer;
-            margin: 10px;
-            float: left;
-            font-size: small;
-        }
-
-        .like_box {
-            font-size: small;
-            margin-right: 10px;
-            width: 30px;
-        }
 
         textarea {
             #margin-top: 10px;
@@ -565,18 +489,14 @@
     <a class="active" href="/">Home</a>
     {% if logged_in() %}
         <a href="/upload">Upload</a>
+        <a href="/your_memes">Your Memes</a>
         <a href="/logout">Logout</a>
     {% else %}
         <a href="/login">Login</a>
         <a href="/new_user">Create new Account</a>
     {% endif %}
     <a href="/about">About</a>
-    <div class="search-container">
-        <form action="/">
-            <input type="text" placeholder="Search.." name="search">
-            <button type="submit"><i class="fa fa-search"></i></button>
-        </form>
-    </div>
+
 </div>
 
 <div id="main_block">
@@ -594,7 +514,7 @@
 
 <script>
     function rate(itemID, rating) {
-        sendData({itemID: itemID, rating: rating}, "/rate_meme/");
+        sendData({itemID: itemID, rating: rating}, "/rate_meme");
         //location.reload();
     }
 

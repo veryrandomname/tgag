@@ -1,15 +1,11 @@
-import os
-
-from flask import (Flask,request,render_template,g)
-
-from flask import request, session, redirect, url_for, escape
-from flask import jsonify
 import bcrypt
-
+from flask import (Flask, render_template, g)
 from flask import jsonify
+from flask import request, session, redirect, url_for, escape
+from flask_uploads import (UploadSet, configure_uploads)
 
-from flask_uploads import (UploadSet,configure_uploads)
 import dbclient
+
 app = Flask(__name__)
 
 app.secret_key = b'yu8Qy4xkBdCvMSJQiZG8k3Vbdv4GUf'
@@ -23,6 +19,7 @@ def get_db():
         g.db = dbclient.MyClient()
     return g.db
 
+
 def user_exists(username):
     return bool(get_db().get_user(username))
 
@@ -34,6 +31,7 @@ def check_password(username, password):
 
 def logged_in():
     return 'username' in session
+
 
 app.jinja_env.globals.update(logged_in=logged_in)
 
@@ -47,41 +45,62 @@ def close_db(exception):
     if hasattr(g, 'db'):
         g.db.tear_down_connection()
 
+
 photos = UploadSet('photos', default_dest=lambda app: app.root_path + "/uploads")
-configure_uploads(app,photos)
+configure_uploads(app, photos)
+
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
-    if request.method == 'POST' and 'photo' in request.files:
+    if logged_in() and request.method == 'POST' and 'photo' in request.files:
         filename = photos.save(request.files['photo'])
-        get_db().send_pic(filename)
-        return "upload successfull"
-    return render_template('upload.html') 
+        get_db().send_pic(filename, current_user())
+        return render_template('upload.html')
+    elif logged_in():
+        return render_template('upload.html')
+    else:
+        return "you not logged in brotha"
+
+
+@app.route('/your_memes', methods=['GET'])
+def your_memes():
+    if logged_in():
+        users_uploads = get_db().get_upload_overview(current_user())
+
+        uploads_with_urls = [(itemID, photos.url(filename), rating) for (itemID, filename, rating) in users_uploads]
+        return render_template('show_uploads.html', uploads=uploads_with_urls)
+    else:
+        return "you not logged in brotha"
 
 
 @app.route('/top_json')
 def top_json():
     if logged_in():
         top = get_db().get_top_n(current_user())
-        return jsonify({"top_rec" : top})
+        return jsonify({"top_rec": top})
     else:
         return "Error", 500
+
 
 @app.route('/top_urls_json')
 def top_urls_json():
     if logged_in():
         top = get_db().get_top_n(current_user(), 20)
-        urls = [ [itemID, photos.url(get_db().get_pic(itemID))] for itemID in top ]
-        return jsonify({"top_rec" : urls})
+        urls = []
+        for itemID in top:
+            pic = get_db().get_pic(itemID)
+            urls.append([itemID, photos.url(pic["filename"]), pic["username"]])
+        return jsonify({"top_rec": urls})
     else:
         return "Error", 500
 
+
 @app.route('/photo/<id>')
 def show(id):
-    photo = get_db().get_pic(id)
-    if photo is None:
-        abort(404)
-    url = photos.url(photo)
+    filename = get_db().get_pic(id)["filename"]
+    if filename is None:
+        return "no such picture there is", 404
+    url = photos.url(filename)
     return render_template('show.html', url=url, itemID=id)
 
 
@@ -93,16 +112,15 @@ def home():
         if top:
             itemID = top[0]
             print(itemID)
-            filename = get_db().get_pic(itemID)
+            filename = get_db().get_pic(itemID)["filename"]
             print(filename)
             url = photos.url(filename)
-            return render_template('home.html', memeID = itemID, memeurl = url )
+            return render_template('home.html', memeID=itemID, memeurl=url)
         else:
-            return render_template('home.html' )
+            return render_template('home.html')
     else:
         return render_template("home.html")
-    #return render_template('home.html', popular=front_page_opinions())
-
+    # return render_template('home.html', popular=front_page_opinions())
 
 
 @app.route('/rate_meme', methods=['POST'])
@@ -116,7 +134,6 @@ def rating_handler():
         return "not logged in, bitch"
 
 
-
 @app.route('/rate_meme_app', methods=['POST'])
 def rating_app_handler():
     itemID = int(request.json['itemID'])
@@ -125,8 +142,7 @@ def rating_app_handler():
         get_db().send_rating(itemID, rating, current_user())
         return jsonify()
     else:
-        return jsonify(),400
-
+        return jsonify(), 400
 
 
 @app.route('/check')

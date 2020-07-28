@@ -25,8 +25,12 @@ class MyClient:
         self.conn.send({'msg': 'get_pic', 'item' : item})
         return self.conn.recv()
 
-    def send_pic(self,filename):
-        self.conn.send({'msg': 'send_pic', 'filename' : filename})
+    def send_pic(self,filename, username):
+        self.conn.send({'msg': 'send_pic', 'filename' : filename, 'username' : username})
+
+    def get_upload_overview(self, username):
+        self.conn.send({'msg': 'get_upload_overview', 'username' : username})
+        return self.conn.recv()
 
     def tear_down_connection(self):
         self.conn.close()
