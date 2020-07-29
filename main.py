@@ -106,12 +106,9 @@ def top_urls_json():
 def home():
     if logged_in():
         top = get_db().get_top_n(current_user())
-        print(top)
         if top:
             itemID = top[0]
-            print(itemID)
             filename = get_db().get_pic(itemID)["filename"]
-            print(filename)
             url = photos.url(filename)
             return render_template('home.html', memeID=itemID, memeurl=url)
         else:
@@ -153,8 +150,6 @@ def check_login():
 @app.route('/new_user', methods=['GET', 'POST'])
 def new_user():
     if request.method == 'POST':
-        print(request)
-        print(request.form)
         u = request.form['username']
         p = request.form['password']
         if len(u) < 30 or len(p) < 30:
@@ -171,8 +166,6 @@ def new_user():
 
 @app.route('/new_app_user', methods=['POST'])
 def new_app_user():
-    print(request)
-    print(request.json)
     u = request.json['username']
     p = request.json['password']
     if len(u) < 30 or len(p) < 30:
@@ -188,7 +181,6 @@ def new_app_user():
 
 @app.route('/login_app', methods=['POST'])
 def login_app():
-    print(request.json)
     u = request.json['username']
     p = request.json['password']
     if check_password(u, p):

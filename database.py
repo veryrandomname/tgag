@@ -39,10 +39,6 @@ picture_dict = load_obj("pictures")
 if not picture_dict:
     picture_dict = {"n": 0, "unknown_pictures": {}, "pictures": {}}
 
-print(ratings_dict)
-print(user_dict)
-print(picture_dict)
-
 
 def add_rating(itemID, userID, rating):
     ratings_dict['itemID'] += [itemID]
@@ -59,7 +55,6 @@ def calculate_predictions(userID):
     algo.fit(trainset)
     iuid = trainset.to_inner_uid(userID)
     # return [algo.predict(userID,iid) for iid in trainset.all_items()]
-    print("Halloo hier", picture_dict, trainset.all_items())
     return [(iiid, algo.estimate(iuid, iiid)) for iiid in trainset.all_items()]
 
 
@@ -84,18 +79,13 @@ def random_memes(n=10):
 
 
 def get_top_n(username, n=10):
-    # print(calculate_predictions(2))
-    # print(calculate_predictions(2))
     try:
         r = calculate_predictions(username)
-        print(r)
     except ValueError:
-        print("Vaöuie")
         return random_memes(n)
     r.sort(key=lambda x: x[1], reverse=True)
     r = [item for (item, _) in r] + pick_n_unknown_memes(n)
     r = [item for item in r if item not in user_dict[username]["memes_rated"]]
-    print("r", r)
     if not r:
         return pick_n_unknown_memes(n)
     else:
@@ -126,7 +116,6 @@ def total_rating(itemID):
 # save_obj(ratings_dict,"ratings")
 
 def handle_msg(msg, conn):
-    print("buuts", msg)
     m = msg["msg"]
     if m == "add_user":
         if "username" in msg and "password" in msg and msg["username"] not in user_dict:
@@ -171,7 +160,6 @@ def on_new_client(conn):
     while True:
         try:
             msg = conn.recv()
-            print("recieved " + str(msg))
             # sys.stdout.flush()
             # do something with msg
             if msg == 'close':
@@ -180,7 +168,6 @@ def on_new_client(conn):
 
             handle_msg(msg, conn)
         except EOFError:
-            print("lost connection")
             conn.close()
             break
 
@@ -190,7 +177,6 @@ listener = Listener(address, authkey=b'secret password')
 
 
 def exit_handler():
-    print("saving shit")
     save_obj(ratings_dict, "ratings")
     save_obj(picture_dict, "pictures")
     save_obj(user_dict, "users")
@@ -201,6 +187,5 @@ atexit.register(exit_handler)
 
 while True:
     conn = listener.accept()
-    print('connection accepted from', listener.last_accepted)
     thread = Thread(target=on_new_client, args=(conn,))
     thread.start()
