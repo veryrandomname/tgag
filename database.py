@@ -116,10 +116,10 @@ def user_has_rated(username, itemID):
 
 
 def total_rating(itemID):
-    result = 0
+    result = [0,0,0]
     for i in range(len(ratings_dict["itemID"])):
         if ratings_dict["itemID"][i] == itemID:
-            result += ratings_dict["rating"][i]
+            result[ratings_dict["rating"][i]-1] += 1
     return result
 
 

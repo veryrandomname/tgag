@@ -403,6 +403,10 @@
             .topnav input[type=text] {
                 border: 1px solid #ccc;
             }
+
+            .meme {
+                max-width: 300;
+            }
         }
 
         .container {
@@ -419,12 +423,15 @@
 
 
         #dislike {
-            margin-left: 30px;
         }
 
         #like, #dislike {
             font-size: large;
+            float:left;
+        }
 
+        #like {
+            margin-left: 30px;
         }
 
         #opinion_bar {
@@ -441,9 +448,9 @@
             border-style: none;
         }
 
-        #meme {
-            max-height: 800px;
-            max-width: 400px;
+        .meme {
+            max-height: 400px;
+            max-width: 300px;
         }
 
 
@@ -518,30 +525,7 @@
         //location.reload();
     }
 
-    function jsonToHtml(data, current_oid, vote) {
-        ul = document.getElementById("reason_list");
 
-        while (ul.firstChild) {
-            ul.removeChild(ul.firstChild);
-        }
-
-        //add from json
-
-        for (i = 0; i < data.length; i++) {
-            var text = data[i]["text"];
-            var l = document.createElement("li");
-            var a = document.createElement("a");
-
-            var linkText = document.createTextNode(text);
-            a.appendChild(linkText);
-            a.title = text;
-            a.href = "#";
-            a.onclick = connection_handler(data[i]['oid'], current_oid, vote);
-            l.appendChild(a);
-
-            ul.appendChild(l);
-        }
-    }
 
 
     function sendData(data, url) {

@@ -6,16 +6,20 @@
 {% block content %}
 
     {% if memeurl %}
-        <img src="{{ memeurl }}">
+        <img class="meme" src="{{ memeurl }}">
 
         {% if logged_in() %}
 
-            <div class="small_like" onclick="rate({{ memeID }} , 2)" title="Like"  }}">
-                like
-            </div>
-            <div class="small_dislike" onclick="rate({{ memeID }} , 1)" title="Dislike" }}">
-                dislike
-            </div>
+        <div>
+
+        <div id="dislike" onclick="rate({{ memeID }} , 1)" title="Dislike">
+            dislike
+        </div>
+        <div id="like" onclick="rate({{ memeID }} , 2)" title="Like">
+            like
+        </div>
+
+        </div>
 
         {% endif %}
 

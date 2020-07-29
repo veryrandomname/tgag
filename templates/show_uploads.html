@@ -3,7 +3,7 @@
 {% block content %}
 
     {% for (item_id, img_url,rating) in uploads %}
-        <img src="{{ img_url }}">
+        <img class="meme" src="{{ img_url }}">
         Rating: {{ rating }}
     {% endfor %}
 

@@ -2,14 +2,16 @@ import bcrypt
 from flask import (Flask, render_template, g)
 from flask import jsonify
 from flask import request, session, redirect, url_for, escape
-from flask_uploads import (UploadSet, configure_uploads)
-
+from flask_uploads import (UploadSet, configure_uploads, patch_request_class)
+from PIL import Image
+import os
 import dbclient
 
 app = Flask(__name__)
 
 app.secret_key = b'yu8Qy4xkBdCvMSJQiZG8k3Vbdv4GUf'
 
+patch_request_class(app,1024 * 1024) #1MB file size max
 
 def get_db():
     """Opens a new database connection if there is none yet for the
@@ -49,11 +51,17 @@ def close_db(exception):
 photos = UploadSet('photos', default_dest=lambda app: app.root_path + "/uploads")
 configure_uploads(app, photos)
 
-
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if logged_in() and request.method == 'POST' and 'photo' in request.files:
         filename = photos.save(request.files['photo'])
+
+        img = Image.open("/home/fettundledig/Programmieren/tgag/uploads/"+filename)
+        img.thumbnail((300,450))
+        filename, file_extension = os.path.splitext(filename)
+        filename = filename+".webp"
+        img.save("/home/fettundledig/Programmieren/tgag/uploads/"+filename,format="WEBP")
+
         get_db().send_pic(filename, current_user())
         return render_template('upload.html')
     elif logged_in():
@@ -93,16 +101,6 @@ def top_urls_json():
         return jsonify({"top_rec": urls})
     else:
         return "Error", 500
-
-
-@app.route('/photo/<id>')
-def show(id):
-    filename = get_db().get_pic(id)["filename"]
-    if filename is None:
-        return "no such picture there is", 404
-    url = photos.url(filename)
-    return render_template('show.html', url=url, itemID=id)
-
 
 @app.route('/', methods=['GET'])
 def home():
