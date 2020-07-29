@@ -212,4 +212,4 @@ def logout():
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")
 else:
-    app.config['SERVER_NAME'] = "18.195.83.66"
+    photos.config.base_url = "http://18.195.83.66/"
