@@ -2,13 +2,15 @@ import bcrypt
 from flask import (Flask, render_template, g)
 from flask import jsonify
 from flask import request, session, redirect, url_for, escape
-from flask_uploads import (UploadSet, configure_uploads, patch_request_class)
+from flask_uploads import (UploadSet, configure_uploads, patch_request_class, UploadConfiguration)
 from PIL import Image
 import os
 import dbclient
 
 app = Flask(__name__)
 app.secret_key = b'as90dhjaSJAaAsafgAF6a6aa36as4DA1'
+
+
 
 patch_request_class(app,1024 * 1024) #1MB file size max
 
@@ -48,6 +50,8 @@ def close_db(exception):
 
 
 photos = UploadSet('photos', default_dest=lambda app: app.root_path + "/uploads")
+if __name__ != "__main__":
+    photos._config = UploadConfiguration(app.root_path + "/uploads", base_url="http://18.195.83.66/" )
 configure_uploads(app, photos)
 
 @app.route('/upload', methods=['GET', 'POST'])
@@ -209,7 +213,6 @@ def logout():
     return redirect(url_for('home'))
 
 
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")
-else:
-    photos.config.base_url = "http://18.195.83.66/"
