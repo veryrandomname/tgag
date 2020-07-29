@@ -56,11 +56,11 @@ def upload():
     if logged_in() and request.method == 'POST' and 'photo' in request.files:
         filename = photos.save(request.files['photo'])
 
-        img = Image.open("/home/fettundledig/Programmieren/tgag/uploads/"+filename)
+        img = Image.open(app.root_path + "/uploads/"+filename)
         img.thumbnail((300,450))
         filename, file_extension = os.path.splitext(filename)
         filename = filename+".webp"
-        img.save("/home/fettundledig/Programmieren/tgag/uploads/"+filename,format="WEBP")
+        img.save(app.root_path + "/uploads/"+filename,format="WEBP")
 
         get_db().send_pic(filename, current_user())
         return render_template('upload.html')
