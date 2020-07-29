@@ -8,8 +8,7 @@ import os
 import dbclient
 
 app = Flask(__name__)
-
-app.secret_key = b'yu8Qy4xkBdCvMSJQiZG8k3Vbdv4GUf'
+app.secret_key = b'as90dhjaSJAaAsafgAF6a6aa36as4DA1'
 
 patch_request_class(app,1024 * 1024) #1MB file size max
 
@@ -212,3 +211,5 @@ def logout():
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")
+else:
+    app.config['SERVER_NAME'] = "18.195.83.66"
