@@ -51,7 +51,7 @@ def close_db(exception):
 
 photos = UploadSet('photos', default_dest=lambda app: app.root_path + "/uploads")
 if __name__ != "__main__":
-    photos._config = UploadConfiguration(app.root_path + "/uploads", base_url="http://18.195.83.66/_uploads/photos/" )
+    photos._config = UploadConfiguration(app.root_path + "/uploads", base_url="https://18.195.83.66/_uploads/photos/" )
 configure_uploads(app, photos)
 
 @app.route('/upload', methods=['GET', 'POST'])
@@ -62,8 +62,9 @@ def upload():
         img = Image.open(app.root_path + "/uploads/"+filename)
         img.thumbnail((300,450))
         filename, file_extension = os.path.splitext(filename)
-        filename = filename+".webp"
-        img.save(app.root_path + "/uploads/"+filename,format="WEBP")
+        new_filename = filename+".webp"
+        img.save(app.root_path + "/uploads/"+new_filename,format="WEBP")
+        os.remove(app.root_path +"/uploads/"+filename+ file_extension)
 
         get_db().send_pic(filename, current_user())
         return render_template('upload.html')
