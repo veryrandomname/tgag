@@ -3,7 +3,7 @@ import os.path
 import pickle
 from multiprocessing.connection import Listener
 from threading import Thread
-
+import signal
 import bcrypt
 import pandas as pd
 from surprise import Reader, SVD, Dataset
@@ -154,6 +154,8 @@ def handle_msg(msg, conn):
                        pic["username"] == msg["username"]])
         else:
             conn.send(None)
+    elif m == "save":
+        save()
 
 
 def on_new_client(conn):
@@ -175,13 +177,19 @@ def on_new_client(conn):
 address = ('localhost', 6000)  # family is deduced to be 'AF_INET'
 listener = Listener(address, authkey=b'secret password')
 
-
-def exit_handler():
+def save():
     save_obj(ratings_dict, "ratings")
     save_obj(picture_dict, "pictures")
     save_obj(user_dict, "users")
+
+
+
+def exit_handler():
+    save()
     listener.close()
 
+
+signal.signal(signal.SIGTERM, exit_handler)
 
 atexit.register(exit_handler)
 
