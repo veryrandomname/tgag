@@ -51,7 +51,7 @@ def close_db(exception):
 
 photos = UploadSet('photos', default_dest=lambda app: app.root_path + "/uploads")
 if __name__ != "__main__":
-    photos._config = UploadConfiguration(app.root_path + "/uploads", base_url="https://18.195.83.66/_uploads/photos/" )
+    photos._config = UploadConfiguration(app.root_path + "/uploads", base_url="https://tgag.app/_uploads/photos/" )
 configure_uploads(app, photos)
 
 @app.route('/upload', methods=['GET', 'POST'])
