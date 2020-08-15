@@ -137,7 +137,11 @@ def handle_msg(msg, conn):
     if m == "add_user":
         if "username" in msg and "password" in msg and msg["username"] not in user_dict:
             password = msg["password"]
-            user_dict[msg["username"]] = {"hashed_password": hash_password(password), "memes_rated": {}}
+            if "registered" in msg:
+                r = msg["registered"]
+            else:
+                r = False
+            user_dict[msg["username"]] = {"hashed_password": hash_password(password), "memes_rated": {}, "registered" : r}
     elif m == "merge_user":
         if "username" in msg and "password" in msg and msg["username"] not in user_dict and \
                 "old_username" in msg and msg['old_username'] in user_dict:
@@ -145,7 +149,8 @@ def handle_msg(msg, conn):
             old_username = msg["old_username"]
             new_username = msg["username"]
             user_dict[new_username] = {"hashed_password": hash_password(password),
-                                          "memes_rated": user_dict[old_username]["memes_rated"]}
+                                          "memes_rated": user_dict[old_username]["memes_rated"],
+                                       "registered" : True}
             del user_dict[old_username]
             ratings_dict[new_username] = ratings_dict[old_username]
             del ratings_dict[old_username]

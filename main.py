@@ -174,7 +174,7 @@ def new_app_user():
     p = request.json['password']
     if len(u) < 30 or len(p) < 30:
         if not user_exists(u):
-            get_db().add_user(u, p)
+            get_db().add_user(u, p, False)
             session['username'] = u
             return jsonify()
         else:
@@ -184,7 +184,7 @@ def new_app_user():
 
 
 @app.route('/merge_app_user', methods=['POST'])
-def new_app_user():
+def merge_app_user():
     ou = request.json['old_username']
     u = request.json['username']
     p = request.json['password']
