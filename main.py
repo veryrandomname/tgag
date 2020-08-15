@@ -66,7 +66,7 @@ def upload():
         img.save(app.root_path + "/uploads/"+new_filename,format="WEBP")
         os.remove(app.root_path +"/uploads/"+filename+ file_extension)
 
-        get_db().send_pic(filename, current_user())
+        get_db().send_pic(new_filename, current_user())
         return render_template('upload.html')
     elif logged_in():
         return render_template('upload.html')
