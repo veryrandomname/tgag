@@ -1,9 +1,10 @@
 import atexit
 import os.path
 import pickle
+import signal
 from multiprocessing.connection import Listener
 from threading import Thread
-import signal
+
 import bcrypt
 import pandas as pd
 from surprise import Reader, SVD, Dataset
@@ -24,13 +25,8 @@ def load_obj(name):
 
 ratings_dict = load_obj("ratings")
 if not ratings_dict:
-    ratings_dict = {'itemID': [],
-                    'userID': [],
-                    'rating': []}
+    ratings_dict = {}
 
-    # ratings_dict = {'itemID': [1, 1, 1, 2, 2],
-    #                'userID': [9, 32, 2, 45, 'user_foo'],
-    #                'rating': [3, 2, 1, 3, 1]}
 user_dict = load_obj("users")
 if not user_dict:
     user_dict = {}
@@ -41,13 +37,27 @@ if not picture_dict:
 
 
 def add_rating(itemID, userID, rating):
-    ratings_dict['itemID'] += [itemID]
-    ratings_dict['userID'] += [userID]
-    ratings_dict['rating'] += [rating]
+    if userID not in ratings_dict:
+        ratings_dict[userID] = {}
+    ratings_dict[userID][itemID] = rating
+
+
+def ratings_dict_to_table():
+    t = {'itemID': [],
+         'userID': [],
+         'rating': []}
+
+    for userID in ratings_dict:
+        for itemID, rating in ratings_dict[userID].items():
+            t['itemID'] += [itemID]
+            t['userID'] += [userID]
+            t['rating'] += [rating]
+
+    return t
 
 
 def calculate_predictions(userID):
-    df = pd.DataFrame(data=ratings_dict)
+    df = pd.DataFrame(data=ratings_dict_to_table())
     reader = Reader(rating_scale=(1, 3))
     data = Dataset.load_from_df(df[['userID', 'itemID', 'rating']], reader)
     trainset = data.build_full_trainset()
@@ -106,23 +116,39 @@ def user_has_rated(username, itemID):
 
 
 def total_rating(itemID):
-    result = [0,0,0]
-    for i in range(len(ratings_dict["itemID"])):
-        if ratings_dict["itemID"][i] == itemID:
-            result[ratings_dict["rating"][i]-1] += 1
+    result = [0, 0, 0]
+    for userID in ratings_dict:
+        for iid, rating in ratings_dict[userID].items():
+            if iid == itemID:
+                result[rating - 1] += 1
     return result
 
 
 # save_obj(ratings_dict,"ratings")
 
+def hash_password(password):
+    salt = bcrypt.gensalt(12)
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed_password
+
+
 def handle_msg(msg, conn):
     m = msg["msg"]
     if m == "add_user":
         if "username" in msg and "password" in msg and msg["username"] not in user_dict:
-            salt = bcrypt.gensalt(12)
             password = msg["password"]
-            hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
-            user_dict[msg["username"]] = {"hashed_password": hashed_password, "memes_rated": {}}
+            user_dict[msg["username"]] = {"hashed_password": hash_password(password), "memes_rated": {}}
+    elif m == "merge_user":
+        if "username" in msg and "password" in msg and msg["username"] not in user_dict and \
+                "old_username" in msg and msg['old_username'] in user_dict:
+            password = msg["password"]
+            old_username = msg["old_username"]
+            new_username = msg["username"]
+            user_dict[new_username] = {"hashed_password": hash_password(password),
+                                          "memes_rated": user_dict[old_username]["memes_rated"]}
+            del user_dict[old_username]
+            ratings_dict[new_username] = ratings_dict[old_username]
+            del ratings_dict[old_username]
     elif m == "get_user":
         if "username" in msg and msg["username"] in user_dict:
             conn.send(user_dict[msg["username"]])
@@ -150,10 +176,13 @@ def handle_msg(msg, conn):
             picture_dict["n"] += 1
     elif m == "get_upload_overview":
         if "username" in msg:
-            conn.send([(itemID, pic["filename"], total_rating(itemID)) for itemID, pic in picture_dict["pictures"].items() if
-                       pic["username"] == msg["username"]])
+            conn.send(
+                [(itemID, pic["filename"], total_rating(itemID)) for itemID, pic in picture_dict["pictures"].items() if
+                 pic["username"] == msg["username"]])
         else:
             conn.send(None)
+
+
     elif m == "save":
         save()
 
@@ -177,11 +206,11 @@ def on_new_client(conn):
 address = ('localhost', 6000)  # family is deduced to be 'AF_INET'
 listener = Listener(address, authkey=b'secret password')
 
+
 def save():
     save_obj(ratings_dict, "ratings")
     save_obj(picture_dict, "pictures")
     save_obj(user_dict, "users")
-
 
 
 def exit_handler():
