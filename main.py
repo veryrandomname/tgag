@@ -12,7 +12,7 @@ app.secret_key = b'as90dhjaSJAaAsafgAF6a6aa36as4DA1'
 
 
 
-patch_request_class(app,1024 * 1024) #1MB file size max
+patch_request_class(app,1024 * 1024 * 10) #10MB file size max
 
 def get_db():
     """Opens a new database connection if there is none yet for the
@@ -60,7 +60,7 @@ def upload():
         filename = photos.save(request.files['photo'])
 
         img = Image.open(app.root_path + "/uploads/"+filename)
-        img.thumbnail((300,450))
+        img.thumbnail((900,1750))
         filename, file_extension = os.path.splitext(filename)
         new_filename = filename+".webp"
         img.save(app.root_path + "/uploads/"+new_filename,format="WEBP")
@@ -84,6 +84,16 @@ def your_memes():
     else:
         return "you not logged in brotha"
 
+
+@app.route('/my_uploads_app', methods=['GET'])
+def my_uploads_app():
+    if logged_in():
+        users_uploads = get_db().get_upload_overview(current_user())
+
+        uploads_with_urls = [{ "itemID": itemID, "url": photos.url(filename), "rating" : rating } for (itemID, filename, rating) in users_uploads]
+        return jsonify({ "my_uploads" : uploads_with_urls})
+    else:
+        return "you not logged in brotha",500
 
 @app.route('/top_json')
 def top_json():
