@@ -34,7 +34,7 @@ class MyClient:
 
     def merge_user(self, new_username, password, old_username):
         self.conn.send(
-            {'msg': 'add_user', 'username': new_username, 'password': password, 'old_username': old_username})
+            {'msg': 'merge_user', 'username': new_username, 'password': password, 'old_username': old_username})
 
     def tear_down_connection(self):
         self.conn.close()

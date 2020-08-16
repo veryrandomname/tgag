@@ -37,8 +37,6 @@ if not picture_dict:
 
 
 def add_rating(itemID, userID, rating):
-    if userID not in ratings_dict:
-        ratings_dict[userID] = {}
     ratings_dict[userID][itemID] = rating
 
 
@@ -142,6 +140,7 @@ def handle_msg(msg, conn):
             else:
                 r = False
             user_dict[msg["username"]] = {"hashed_password": hash_password(password), "memes_rated": {}, "registered" : r}
+            ratings_dict[msg["username"]] = {}
     elif m == "merge_user":
         if "username" in msg and "password" in msg and msg["username"] not in user_dict and \
                 "old_username" in msg and msg['old_username'] in user_dict:
@@ -151,9 +150,11 @@ def handle_msg(msg, conn):
             user_dict[new_username] = {"hashed_password": hash_password(password),
                                           "memes_rated": user_dict[old_username]["memes_rated"],
                                        "registered" : True}
-            del user_dict[old_username]
             ratings_dict[new_username] = ratings_dict[old_username]
             del ratings_dict[old_username]
+            del user_dict[old_username]
+            #for itemID, pic in picture_dict["pictures"].items():
+            #    pic["username"] = new_username
     elif m == "get_user":
         if "username" in msg and msg["username"] in user_dict:
             conn.send(user_dict[msg["username"]])
