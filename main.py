@@ -90,7 +90,7 @@ def get_thumbnail_url(filename):
     if __name__ == "__main__":
         return url_for('thumbnails', filename=filename, _external=True)
     else:
-        return f"https://tgag.app/thumbnails/{filename}.webp"
+        return f"https://tgag.app/thumbnails/{filename}"
 
 
 @app.route('/thumbnails/<filename>', methods=['GET'])
