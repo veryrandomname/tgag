@@ -9,8 +9,6 @@ import dbclient
 
 app = Flask(__name__)
 app.secret_key = b'as90dhjaSJAaAsafgAF6a6aa36as4DA1'
-if __name__ != "__main__":
-    app.config['SERVER_NAME'] = "tgag.app:80"
 patch_request_class(app, 1024 * 1024 * 10)  # 10MB file size max
 
 
@@ -89,8 +87,10 @@ def create_thumbnail(filename):
 
 def get_thumbnail_url(filename):
     create_thumbnail(filename)
-
-    return url_for('thumbnails', filename=filename, _external=True)
+    if __name__ == "__main__":
+        return url_for('thumbnails', filename=filename, _external=True)
+    else:
+        return f"https://tgag.app/thumbnails/{filename}"
 
 
 @app.route('/thumbnails/<filename>', methods=['GET'])
