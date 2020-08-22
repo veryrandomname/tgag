@@ -16,8 +16,14 @@ def load_obj(name):
         return None
 
 
+
 ratings_dict = load_obj("ratings")
 new_ratings_dict = {}
+
+users = load_obj("users")
+for userID in users:
+    new_ratings_dict[userID] = {}
+
 if ratings_dict:
     for i in range(len(ratings_dict["itemID"])):
         itemID = ratings_dict["itemID"][i]
