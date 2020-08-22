@@ -10,7 +10,7 @@ import dbclient
 app = Flask(__name__)
 app.secret_key = b'as90dhjaSJAaAsafgAF6a6aa36as4DA1'
 if __name__ != "__main__":
-    app.config['SERVER_NAME'] = "https://tgag.app/"
+    app.config['SERVER_NAME'] = "https://tgag.app"
 patch_request_class(app, 1024 * 1024 * 10)  # 10MB file size max
 
 
