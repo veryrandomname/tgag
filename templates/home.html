@@ -9,7 +9,7 @@
         {% if m_type == "image" %}
             <img class="meme" src="{{ memeurl }}">
         {% elif m_type == "video" %}
-             <video controls autoplay>
+             <video controls autoplay loop>
               <source src="{{ memeurl }}" >
             </video>
         {% endif %}
@@ -33,6 +33,40 @@
         You have seen all the memes we have!
     {% endif %}
 
+
+    <script>
+
+        window.addEventListener("keydown", function (event) {
+  if (event.defaultPrevented) {
+    return; // Do nothing if the event was already processed
+  }
+
+  switch (event.key) {
+    case "ArrowDown":
+      // code for "down arrow" key press.
+      break;
+    case "ArrowUp":
+      // code for "up arrow" key press.
+      break;
+    case "ArrowLeft":
+      // code for "left arrow" key press.
+        rate({{ memeID }} , 1)
+        event.preventDefault();
+
+      break;
+    case "ArrowRight":
+      // code for "right arrow" key press.
+        rate({{ memeID }} , 2)
+        event.preventDefault();
+      break;
+    default:
+      return; // Quit when this doesn't handle the key event.
+  }
+
+  // Cancel the default action to avoid it being handled twice
+}, true);
+
+    </script>
 
 {% endblock %}
 
