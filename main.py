@@ -2,7 +2,7 @@ import bcrypt
 from flask import (Flask, render_template, g)
 from flask import jsonify
 from flask import request, session, redirect, url_for, escape
-from flask_uploads import (UploadSet, configure_uploads, patch_request_class, UploadConfiguration)
+from flask_uploads import (UploadSet, configure_uploads, patch_request_class, UploadConfiguration, IMAGES)
 from PIL import Image
 import os
 import dbclient
@@ -48,8 +48,8 @@ def close_db(exception):
     if hasattr(g, 'db'):
         g.db.tear_down_connection()
 
-
-photos = UploadSet('photos', default_dest=lambda app: app.root_path + "/uploads")
+ALLOWED_EXTENSIONS = tuple('jpg jpe jpeg png webp webm mp4'.split())
+photos = UploadSet('photos', default_dest=lambda app: app.root_path + "/uploads", extensions = ALLOWED_EXTENSIONS)
 if __name__ != "__main__":
     photos._config = UploadConfiguration(app.root_path + "/uploads", base_url="https://tgag.app/_uploads/photos/" )
 configure_uploads(app, photos)
@@ -59,14 +59,17 @@ def upload():
     if logged_in() and request.method == 'POST' and 'photo' in request.files:
         filename = photos.save(request.files['photo'])
 
+        """
         img = Image.open(app.root_path + "/uploads/"+filename)
         img.thumbnail((900,1750))
         filename, file_extension = os.path.splitext(filename)
         new_filename = filename+".webp"
         img.save(app.root_path + "/uploads/"+new_filename,format="WEBP")
         os.remove(app.root_path +"/uploads/"+filename+ file_extension)
-
         get_db().send_pic(new_filename, current_user())
+        """
+        get_db().send_pic(filename, current_user())
+
         return render_template('upload.html')
     elif logged_in():
         return render_template('upload.html')
@@ -104,6 +107,18 @@ def top_json():
         return "Error", 500
 
 
+def file_extension(filename):
+    _, file_extension = os.path.splitext(filename)
+    return file_extension[1:]
+
+def meme_type(filename):
+    ext = file_extension(filename)
+    if ext == "mp4" or ext == "webm":
+        return "video"
+    else:
+        return "image"
+
+
 @app.route('/top_urls_json')
 def top_urls_json():
     if logged_in():
@@ -111,7 +126,9 @@ def top_urls_json():
         urls = []
         for itemID in top:
             pic = get_db().get_pic(itemID)
-            urls.append([itemID, photos.url(pic["filename"]), pic["username"]])
+            t = meme_type(pic["filename"])
+            ext = file_extension(pic["filename"])
+            urls.append({ "itemID" : itemID, "url" : photos.url(pic["filename"]), "author" : pic["username"], "file_extension" : ext, "type" : t, "filename" : pic["filename"]})
         return jsonify({"top_rec": urls})
     else:
         return "Error", 500
@@ -124,7 +141,7 @@ def home():
             itemID = top[0]
             filename = get_db().get_pic(itemID)["filename"]
             url = photos.url(filename)
-            return render_template('home.html', memeID=itemID, memeurl=url)
+            return render_template('home.html', memeID=itemID, memeurl=url, m_type = meme_type(filename))
         else:
             return render_template('home.html')
     else:

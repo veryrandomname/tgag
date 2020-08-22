@@ -6,7 +6,13 @@
 {% block content %}
 
     {% if memeurl %}
-        <img class="meme" src="{{ memeurl }}">
+        {% if m_type == "image" %}
+            <img class="meme" src="{{ memeurl }}">
+        {% elif m_type == "video" %}
+             <video controls autoplay>
+              <source src="{{ memeurl }}" >
+            </video>
+        {% endif %}
 
         {% if logged_in() %}
 
