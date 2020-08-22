@@ -2,11 +2,15 @@
 
 {% block content %}
 
-    {% for (item_id, img_url,rating) in uploads %}
-        <img class="meme" src="{{ img_url }}">
-        Rating: {{ rating }}
-    {% endfor %}
+    {% for meme in uploads %}
 
+        {% if meme["type"] == "image" %}
+            <img class="meme" src="{{ meme["url"] }}">
+        {% elif meme["type"] == "video" %}
+            <img class="meme" src="{{ meme["thumbnail_url"] }}">
+        {% endif %}
+        Rating: {{ meme["rating"] }}
+    {% endfor %}
 
 
 {% endblock %}
