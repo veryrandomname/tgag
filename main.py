@@ -1,11 +1,17 @@
+import random
+import string
+
 import bcrypt
-from flask import (Flask, render_template, g, send_from_directory)
+from flask import (Flask, render_template, g, send_from_directory, flash)
 from flask import jsonify
 from flask import request, session, redirect, url_for, escape
 from flask_uploads import (UploadSet, configure_uploads, patch_request_class, UploadConfiguration, IMAGES)
-from PIL import Image
 import os
+
+from werkzeug.utils import secure_filename
+
 import dbclient
+from util import get_file_extension
 
 app = Flask(__name__)
 app.secret_key = b'as90dhjaSJAaAsafgAF6a6aa36as4DA1'
@@ -17,7 +23,7 @@ def get_db():
     current application context.
     """
     if not hasattr(g, 'db'):
-        g.db = dbclient.MyClient()
+        g.db = dbclient.MyClient(app.root_path)
     return g.db
 
 
@@ -47,21 +53,35 @@ def close_db(exception):
         g.db.tear_down_connection()
 
 
-ALLOWED_EXTENSIONS = tuple('jpg jpe jpeg png webp webm mp4'.split())
+ALLOWED_EXTENSIONS = tuple('jpg jpe jpeg png webp webm mp4 gif'.split())
 photos = UploadSet('photos', default_dest=lambda app: app.root_path + "/uploads", extensions=ALLOWED_EXTENSIONS)
 if __name__ != "__main__":
     photos._config = UploadConfiguration(app.root_path + "/uploads", base_url="https://tgag.app/_uploads/photos/")
 configure_uploads(app, photos)
 
 
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+# path has to have a trailing slash /
+def generate_unique_filename(path):
+    filename = ''.join(random.choices(string.ascii_lowercase, k=15))
+    if os.path.isfile(path + filename):
+        return generate_unique_filename(path)
+    else:
+        return filename
+
+
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
-    if logged_in() and request.method == 'POST' and 'photo' in request.files:
-        filename = photos.save(request.files['photo'])
+    if logged_in() and request.method == 'POST' and 'photo' in request.files and 'title' in request.form and 'show_username' in request.form:
+        file = request.files['photo']
+        # _, file_extension = os.path.splitext(file.filename)
+        if get_file_extension(file.filename) not in ALLOWED_EXTENSIONS:
+            return "that filetype is not allowed"
 
-        name, extension = os.path.splitext(filename)
-        if extension == "webm" or extension == "mp4":
-            create_thumbnail(filename)
         """
         img = Image.open(app.root_path + "/uploads/"+filename)
         img.thumbnail((900,1750))
@@ -71,7 +91,7 @@ def upload():
         os.remove(app.root_path +"/uploads/"+filename+ file_extension)
         get_db().send_pic(new_filename, current_user())
         """
-        get_db().send_pic(filename, current_user())
+        get_db().send_pic(file, current_user(), get_file_extension(file.filename), request.form['title'], request.form['show_username'])
 
         return render_template('upload.html')
     elif logged_in():
@@ -82,20 +102,33 @@ def upload():
 
 def create_thumbnail(filename):
     if not os.path.isfile(f"{app.root_path}/thumbnails/{filename}.webp"):
-        os.system(f"ffmpeg -i {app.root_path}/uploads/{filename} -ss 00:00:00.000 -vframes 1 {app.root_path}/thumbnails/{filename}.webp")
+        os.system(
+            f"ffmpeg -i {app.root_path}/uploads/{filename} -ss 00:00:00.000 -vframes 1 {app.root_path}/thumbnails/{filename}.webp")
+
+
+def get_url_to_file(directory, filename):
+    if __name__ == "__main__":
+        return url_for(directory, filename=filename, _external=True)
+    else:
+        return f"https://tgag.app/{directory}/{filename}"
 
 
 def get_thumbnail_url(filename):
     create_thumbnail(filename)
-    if __name__ == "__main__":
-        return url_for('thumbnails', filename=filename, _external=True)
-    else:
-        return f"https://tgag.app/thumbnails/{filename}.webp"
+    return get_url_to_file("thumbnails", filename + ".webp")
 
 
 @app.route('/thumbnails/<filename>', methods=['GET'])
 def thumbnails(filename):
-    return send_from_directory(f'{app.root_path}/thumbnails', filename + ".webp", as_attachment = False, mimetype='image')
+    if app.debug:
+        return send_from_directory(f'{app.root_path}/thumbnails', filename + ".webp", as_attachment=False,
+                                   mimetype='image')
+
+
+@app.route('/uploads/<filename>', methods=['GET'])
+def uploads(filename):
+    if app.debug:
+        return send_from_directory(f'{app.root_path}/uploads', filename, as_attachment=False)
 
 
 def get_better_upload_overview(userID):
@@ -154,9 +187,14 @@ def get_item_info(itemID):
     filename = pic["filename"]
     t = meme_type(filename)
     ext = file_extension(filename)
-    thumb = get_thumbnail_url(filename)
-    return {"itemID": itemID, "url": photos.url(pic["filename"]), "author": pic["username"], "file_extension": ext,
-            "type": t, "filename": filename, "thumbnail_url" : thumb}
+    if t == "video":
+        thumb = get_thumbnail_url(filename)
+    else:
+        thumb = None
+    return {"itemID": itemID, "url": get_url_to_file("uploads", pic["filename"]), "author": pic["username"],
+            "file_extension": ext,
+            "type": t, "filename": filename, "thumbnail_url": thumb, "title": pic["title"],
+            "show_username": pic["show_username"]}
 
 
 @app.route('/top_urls_json')
@@ -175,9 +213,11 @@ def home():
         top = get_db().get_top_n(current_user())
         if top:
             itemID = top[0]
-            filename = get_db().get_pic(itemID)["filename"]
-            url = photos.url(filename)
-            return render_template('home.html', memeID=itemID, memeurl=url, m_type=meme_type(filename))
+            pic = get_db().get_pic(itemID)
+            filename = pic["filename"]
+            url = get_url_to_file("uploads", filename)
+            return render_template('home.html', memeID=itemID, memeurl=url, m_type=meme_type(filename),
+                                   title=pic["title"])
         else:
             return render_template('home.html')
     else:

@@ -130,17 +130,21 @@ def hash_password(password):
     return hashed_password
 
 
+def add_user(username, password, registered):
+    if username not in user_dict:
+        user_dict[username] = {"hashed_password": hash_password(password), "memes_rated": {}, "registered": registered}
+        ratings_dict[username] = {}
+
+
 def handle_msg(msg, conn):
     m = msg["msg"]
     if m == "add_user":
         if "username" in msg and "password" in msg and msg["username"] not in user_dict:
-            password = msg["password"]
             if "registered" in msg:
                 r = msg["registered"]
             else:
                 r = False
-            user_dict[msg["username"]] = {"hashed_password": hash_password(password), "memes_rated": {}, "registered" : r}
-            ratings_dict[msg["username"]] = {}
+            add_user(msg["username"], msg["password"], r)
     elif m == "merge_user":
         if "username" in msg and "password" in msg and msg["username"] not in user_dict and \
                 "old_username" in msg and msg['old_username'] in user_dict:
@@ -175,9 +179,9 @@ def handle_msg(msg, conn):
         else:
             conn.send(None)
     elif m == "send_pic":
-        if "filename" in msg and "username" in msg:
+        if "filename" in msg and "username" in msg and "title" in msg and "show_username" in msg:
             itemID = picture_dict["n"]
-            picture_dict["pictures"][itemID] = {"filename": msg["filename"], "username": msg["username"]}
+            picture_dict["pictures"][itemID] = {"filename": msg["filename"], "username": msg["username"], "title" : msg["title"], "show_username" : msg["show_username"]}
             picture_dict["unknown_pictures"][itemID] = True
             picture_dict["n"] += 1
     elif m == "get_upload_overview":
@@ -187,7 +191,6 @@ def handle_msg(msg, conn):
                  pic["username"] == msg["username"]])
         else:
             conn.send(None)
-
 
     elif m == "save":
         save()

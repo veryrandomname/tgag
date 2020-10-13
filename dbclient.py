@@ -1,11 +1,32 @@
+import os
+import random
+import shutil
+import string
 from multiprocessing.connection import Client
+
+ALLOWED_EXTENSIONS = tuple('jpg jpe jpeg png webp webm mp4 gif'.split())
+
+
+# path has to have a trailing slash /
+def generate_unique_filename(path):
+    filename = ''.join(random.choices(string.ascii_lowercase, k=15))
+    if os.path.isfile(path + filename):
+        return generate_unique_filename(path)
+    else:
+        return filename
 
 
 class MyClient:
     conn = None
 
-    def __init__(self, address=('localhost', 6000), authkey=b'secret password'):
+    def __init__(self, root_path, address=('localhost', 6000), authkey=b'secret password'):
         self.conn = Client(address, authkey=authkey)
+        self.root_path = root_path
+
+    def create_thumbnail(self, filename):
+        if not os.path.isfile(f"{self.root_path}/thumbnails/{filename}.webp"):
+            os.system(
+                f"ffmpeg -i {self.root_path}/uploads/{filename} -ss 00:00:00.000 -vframes 1 {self.root_path}/thumbnails/{filename}.webp")
 
     def add_user(self, username, password, registered=True):
         self.conn.send({'msg': 'add_user', 'username': username, 'password': password, 'registered': registered})
@@ -25,8 +46,17 @@ class MyClient:
         self.conn.send({'msg': 'get_pic', 'item': item})
         return self.conn.recv()
 
-    def send_pic(self, filename, username):
-        self.conn.send({'msg': 'send_pic', 'filename': filename, 'username': username})
+    def send_pic(self, stream, username, file_extension, title, show_username):
+        if file_extension in ALLOWED_EXTENSIONS:
+            filename = generate_unique_filename(self.root_path + "/uploads/")
+            full_filename = f"{filename}.{file_extension}"
+            with open(self.root_path + "/uploads/" + full_filename, 'wb') as f:
+                shutil.copyfileobj(stream, f)
+            if file_extension == "webm" or file_extension == "mp4":
+                self.create_thumbnail(filename)
+
+            self.conn.send({'msg': 'send_pic', 'filename': full_filename, 'username': username, "title": title,
+                            "show_username": show_username})
 
     def get_upload_overview(self, username):
         self.conn.send({'msg': 'get_upload_overview', 'username': username})

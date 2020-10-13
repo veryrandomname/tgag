@@ -7,7 +7,9 @@
 
 
 <form method=POST enctype=multipart/form-data action="{{ url_for('upload') }}">
-    <input type=file name=photo>
+    Title: <input name=title><br>
+    Choose file: <input type=file name=photo><br>
+    Show username <input type="checkbox" name="show_username">
     <input type="submit" value="Submit">
 </form>
 
