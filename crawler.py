@@ -12,7 +12,7 @@ from werkzeug.datastructures import FileStorage
 import dbclient
 from util import get_file_extension
 
-db = dbclient.MyClient('/home/fettundledig/Programmieren/tgag')
+db = dbclient.MyClient('/home/fabi/PycharmProjects/tgag')
 
 
 def job(t):
@@ -34,7 +34,7 @@ def job(t):
     json_response = r.json()
 
     children = json_response["data"]["children"]
-    for child in children[:3]:
+    for child in children:
         meme = child["data"]
         url = meme["url"]
         title = meme['title']
@@ -46,7 +46,7 @@ def job(t):
 
             img_response = requests.get(url, stream=True)
             out_file = BytesIO(img_response.content)
-            db.send_pic(out_file, "cockblockula", file_extension, title)
+            db.send_pic(out_file, "cockblockula", file_extension, title, False)
 
 
 job(0)

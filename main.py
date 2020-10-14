@@ -5,7 +5,6 @@ import bcrypt
 from flask import (Flask, render_template, g, send_from_directory, flash)
 from flask import jsonify
 from flask import request, session, redirect, url_for, escape
-from flask_uploads import (UploadSet, configure_uploads, patch_request_class, UploadConfiguration, IMAGES)
 import os
 
 from werkzeug.utils import secure_filename
@@ -15,7 +14,6 @@ from util import get_file_extension
 
 app = Flask(__name__)
 app.secret_key = b'as90dhjaSJAaAsafgAF6a6aa36as4DA1'
-patch_request_class(app, 1024 * 1024 * 10)  # 10MB file size max
 
 
 def get_db():
@@ -54,10 +52,6 @@ def close_db(exception):
 
 
 ALLOWED_EXTENSIONS = tuple('jpg jpe jpeg png webp webm mp4 gif'.split())
-photos = UploadSet('photos', default_dest=lambda app: app.root_path + "/uploads", extensions=ALLOWED_EXTENSIONS)
-if __name__ != "__main__":
-    photos._config = UploadConfiguration(app.root_path + "/uploads", base_url="https://tgag.app/_uploads/photos/")
-configure_uploads(app, photos)
 
 
 def allowed_file(filename):
@@ -76,7 +70,7 @@ def generate_unique_filename(path):
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
-    if logged_in() and request.method == 'POST' and 'photo' in request.files and 'title' in request.form and 'show_username' in request.form:
+    if logged_in() and request.method == 'POST' and 'photo' in request.files and 'title' in request.form:
         file = request.files['photo']
         # _, file_extension = os.path.splitext(file.filename)
         if get_file_extension(file.filename) not in ALLOWED_EXTENSIONS:
@@ -91,7 +85,9 @@ def upload():
         os.remove(app.root_path +"/uploads/"+filename+ file_extension)
         get_db().send_pic(new_filename, current_user())
         """
-        get_db().send_pic(file, current_user(), get_file_extension(file.filename), request.form['title'], request.form['show_username'])
+
+        get_db().send_pic(file, current_user(), get_file_extension(file.filename), request.form['title'],
+                          request.form.get('show_username', None))
 
         return render_template('upload.html')
     elif logged_in():
@@ -191,10 +187,13 @@ def get_item_info(itemID):
         thumb = get_thumbnail_url(filename)
     else:
         thumb = None
-    return {"itemID": itemID, "url": get_url_to_file("uploads", pic["filename"]), "author": pic["username"],
+
+    author = None
+    if pic["show_username"]:
+        author = pic["username"]
+    return {"itemID": itemID, "url": get_url_to_file("uploads", pic["filename"]), "author": author,
             "file_extension": ext,
-            "type": t, "filename": filename, "thumbnail_url": thumb, "title": pic["title"],
-            "show_username": pic["show_username"]}
+            "type": t, "filename": filename, "thumbnail_url": thumb, "title": pic["title"]}
 
 
 @app.route('/top_urls_json')
@@ -216,8 +215,12 @@ def home():
             pic = get_db().get_pic(itemID)
             filename = pic["filename"]
             url = get_url_to_file("uploads", filename)
+            if pic["show_username"]:
+                author = pic["username"]
+            else:
+                author = None
             return render_template('home.html', memeID=itemID, memeurl=url, m_type=meme_type(filename),
-                                   title=pic["title"])
+                                   title=pic["title"], author=author)
         else:
             return render_template('home.html')
     else:
