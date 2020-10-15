@@ -117,7 +117,7 @@ def get_thumbnail_url(filename):
 @app.route('/thumbnails/<filename>', methods=['GET'])
 def thumbnails(filename):
     if app.debug:
-        return send_from_directory(f'{app.root_path}/thumbnails', filename + ".webp", as_attachment=False,
+        return send_from_directory(f'{app.root_path}/thumbnails', filename, as_attachment=False,
                                    mimetype='image')
 
 
