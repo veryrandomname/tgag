@@ -218,7 +218,7 @@ def on_new_client(conn):
             break
 
 
-address = ('localhost', 6000)  # family is deduced to be 'AF_INET'
+address = ('0.0.0.0', 6000)  # family is deduced to be 'AF_INET'
 listener = Listener(address, authkey=load_config()["database"]["password"].encode())
 
 
