@@ -26,24 +26,35 @@ reddit = praw.Reddit(
 
 
 def crawl_subreddit(subreddit_name, user, limit=20):
-    for submission in reddit.subreddit(subreddit_name).hot(limit=limit):
-        if submission.url and submission.title:
-            print(submission.title)
-            parsed_url = urlparse(submission.url)
-            filename = os.path.basename(parsed_url.path)
-            filename_without_extension, file_extension = os.path.splitext(filename)
-            file_extension = file_extension[1:]
+    if os.path.isfile(f"{subreddit_name}.json"):
+        with open(f"{subreddit_name}.json", "r") as subreddit_file:
+            submission_done = json.load(subreddit_file)
+    else:
+        submission_done = {}
 
-            img_response = requests.get(submission.url, stream=True)
-            stream = BytesIO(img_response.content)
-            if file_extension == "gif":
-                stream = gif_stream_to_mp4_stream(stream)
-                file_extension = "mp4"
-            if file_extension in tuple('jpg jpe jpeg png'.split()):
-                stream = image_stream_to_webp_stream(stream, file_extension)
-                file_extension = "webp"
+    try:
+        for submission in reddit.subreddit(subreddit_name).hot(limit=limit):
+            if submission.url and submission.title and submission.id not in submission_done:
+                print(submission.title)
+                parsed_url = urlparse(submission.url)
+                filename = os.path.basename(parsed_url.path)
+                filename_without_extension, file_extension = os.path.splitext(filename)
+                file_extension = file_extension[1:]
 
-            db.send_pic(stream, user, file_extension, submission.title, False)
+                img_response = requests.get(submission.url, stream=True)
+                stream = BytesIO(img_response.content)
+                if file_extension == "gif":
+                    stream = gif_stream_to_mp4_stream(stream)
+                    file_extension = "mp4"
+                if file_extension in tuple('jpg jpe jpeg png'.split()):
+                    stream = image_stream_to_webp_stream(stream, file_extension)
+                    file_extension = "webp"
+
+                db.send_pic(stream, user, file_extension, submission.title, False)
+                submission_done[submission.id] = True
+    finally:
+        with open(f"{subreddit_name}.json", 'w') as outfile:
+            json.dump(submission_done, outfile)
 
 
 for subreddit in config["subreddits"]:
