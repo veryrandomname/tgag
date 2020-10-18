@@ -2,6 +2,7 @@ import atexit
 import json
 import os.path
 import pickle
+import shutil
 import signal
 from multiprocessing.connection import Listener
 from threading import Thread
@@ -10,8 +11,9 @@ import bcrypt
 import pandas as pd
 from surprise import Reader, SVD, Dataset
 
-from util import load_config
+from util import load_config, generate_unique_filename
 
+config = load_config()
 
 def save_obj(obj, name):
     with open(name + '.pkl', 'wb') as f:
@@ -140,6 +142,12 @@ def add_user(username, password, registered):
         ratings_dict[username] = {}
 
 
+def create_thumbnail(filename):
+    if not os.path.isfile(f"{config['root_path']}/thumbnails/{filename}.webp"):
+        os.system(
+             f"ffmpeg -i {config['root_path']}/uploads/{filename} -ss 00:00:00.000 -vframes 1 {config['root_path']}/thumbnails/{filename}.webp")
+
+
 def handle_msg(msg, conn):
     m = msg["msg"]
     if m == "add_user":
@@ -182,9 +190,17 @@ def handle_msg(msg, conn):
         else:
             conn.send(None)
     elif m == "send_pic":
-        if "filename" in msg and "username" in msg and "title" in msg and "show_username" in msg:
+        if "file_extension" in msg and "username" in msg and "title" in msg and "show_username" in msg and "stream" in msg:
+            file_extension = msg["file_extension"]
+            filename = generate_unique_filename(config["root_path"] + "/uploads/")
+            full_filename = f"{filename}.{file_extension}"
+            with open(config["root_path"] + "/uploads/" + full_filename, 'wb') as f:
+                shutil.copyfileobj(msg["stream"], f)
+            if file_extension == "webm" or file_extension == "mp4":
+                create_thumbnail(filename)
+
             itemID = picture_dict["n"]
-            picture_dict["pictures"][itemID] = {"filename": msg["filename"], "username": msg["username"],
+            picture_dict["pictures"][itemID] = {"filename": full_filename, "username": msg["username"],
                                                 "title": msg["title"], "show_username": msg["show_username"]}
             picture_dict["unknown_pictures"][itemID] = True
             picture_dict["n"] += 1
@@ -219,7 +235,7 @@ def on_new_client(conn):
 
 
 address = ('0.0.0.0', 6000)  # family is deduced to be 'AF_INET'
-listener = Listener(address, authkey=load_config()["database"]["password"].encode())
+listener = Listener(address, authkey=config["database"]["password"].encode())
 
 
 def save():
