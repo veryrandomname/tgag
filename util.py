@@ -5,6 +5,7 @@ import random
 import shutil
 import string
 from pathlib import Path
+import os.path
 
 def get_file_extension(filename):
     _, file_extension = os.path.splitext(filename)
@@ -37,8 +38,11 @@ def apply_ffmpeg_to_stream(stream, ffmpeg_operation, input_file_extension, outpu
     with open(tmp_src, 'wb') as file:
         shutil.copyfileobj(stream, file)
         ffmpeg_operation(tmp_src, tmp_dst)
-        with open(tmp_dst, 'rb') as file_dst:
-            return io.BytesIO(file_dst.read())
+        if os.path.isfile(tmp_dst):
+            with open(tmp_dst, 'rb') as file_dst:
+                return io.BytesIO(file_dst.read())
+        else:
+            print("ERROR: some problem with ffmpeg it seems")
 
 
 def gif_stream_to_mp4_stream(gif_stream):

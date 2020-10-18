@@ -16,7 +16,7 @@ from util import get_file_extension, generate_unique_filename, gif_stream_to_mp4
 
 config = load_config()
 
-db = dbclient.MyClient(config["root_path"])
+db = dbclient.MyClient(config["root_path"], address=("18.195.83.66", 6000))
 
 reddit = praw.Reddit(
     client_id=config["reddit"]["username"],
@@ -49,5 +49,5 @@ def crawl_subreddit(subreddit_name, user, limit=20):
 for subreddit in config["subreddits"]:
     subreddit_name = subreddit["name"]
     db.add_user(subreddit_name, subreddit["password"], True)
-    crawl_subreddit(subreddit_name,subreddit_name, 3 )
+    crawl_subreddit(subreddit_name,subreddit_name, 1000)
 
