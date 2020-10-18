@@ -1,4 +1,5 @@
 import atexit
+import json
 import os.path
 import pickle
 import signal
@@ -8,6 +9,8 @@ from threading import Thread
 import bcrypt
 import pandas as pd
 from surprise import Reader, SVD, Dataset
+
+from util import load_config
 
 
 def save_obj(obj, name):
@@ -216,7 +219,7 @@ def on_new_client(conn):
 
 
 address = ('localhost', 6000)  # family is deduced to be 'AF_INET'
-listener = Listener(address, authkey=b'secret password')
+listener = Listener(address, authkey=load_config()["database"]["password"].encode())
 
 
 def save():

@@ -1,3 +1,4 @@
+import json
 import random
 import string
 
@@ -10,10 +11,10 @@ import os
 from werkzeug.utils import secure_filename
 
 import dbclient
-from util import get_file_extension
+from util import get_file_extension, load_config
 
 app = Flask(__name__)
-app.secret_key = b'as90dhjaSJAaAsafgAF6a6aa36as4DA1'
+app.secret_key = load_config()["flask"]["password"].encode()
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB
 
 def get_db():

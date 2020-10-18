@@ -1,18 +1,20 @@
+import json
 import os
 import random
 import shutil
 import string
 from multiprocessing.connection import Client
 
-from util import generate_unique_filename
+from util import generate_unique_filename, load_config
 
 ALLOWED_EXTENSIONS = tuple('jpg jpe jpeg png webp webm mp4'.split())
 
+config = load_config()
 
 class MyClient:
     conn = None
 
-    def __init__(self, root_path, address=('localhost', 6000), authkey=b'secret password'):
+    def __init__(self, root_path, address=('localhost', 6000), authkey=config["database"]["password"].encode()):
         self.conn = Client(address, authkey=authkey)
         self.root_path = root_path
 

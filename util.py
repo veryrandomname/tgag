@@ -1,9 +1,10 @@
 import io
+import json
 import os
 import random
 import shutil
 import string
-
+from pathlib import Path
 
 def get_file_extension(filename):
     _, file_extension = os.path.splitext(filename)
@@ -46,3 +47,8 @@ def gif_stream_to_mp4_stream(gif_stream):
 
 def image_stream_to_webp_stream(image_stream, input_file_extension):
     return apply_ffmpeg_to_stream(image_stream, convert_image_to_webp, input_file_extension, "webp")
+
+
+def load_config():
+    with open(str(Path.home()) + '/.config/swepe_config.json') as json_file:
+        return json.load(json_file)
