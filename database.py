@@ -143,10 +143,10 @@ def add_user(username, password, registered):
         ratings_dict[username] = {}
 
 
-def create_thumbnail(filename):
-    if not os.path.isfile(f"{config['root_path']}/thumbnails/{filename}.webp"):
+def create_thumbnail(full_filename):
+    if not os.path.isfile(f"{config['root_path']}/thumbnails/{full_filename}.webp"):
         os.system(
-             f"ffmpeg -i {config['root_path']}/uploads/{filename} -ss 00:00:00.000 -vframes 1 {config['root_path']}/thumbnails/{filename}.webp")
+             f"ffmpeg -i {config['root_path']}/uploads/{full_filename} -ss 00:00:00.000 -vframes 1 {config['root_path']}/thumbnails/{full_filename}.webp")
 
 
 def handle_msg(msg, conn):
@@ -198,7 +198,7 @@ def handle_msg(msg, conn):
             with open(config["root_path"] + "/uploads/" + full_filename, 'wb') as f:
                 shutil.copyfileobj(BytesIO(msg["payload"]), f)
             if file_extension == "webm" or file_extension == "mp4":
-                create_thumbnail(filename)
+                create_thumbnail(full_filename)
 
             itemID = picture_dict["n"]
             picture_dict["pictures"][itemID] = {"filename": full_filename, "username": msg["username"],
