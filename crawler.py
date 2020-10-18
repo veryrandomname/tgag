@@ -45,8 +45,8 @@ def crawl_subreddit(subreddit_name, user, limit=20):
             db.send_pic(stream, user, file_extension, submission.title, False)
 
 
-db.add_user("dankmemes", "password", True)
-crawl_subreddit("dankmemes", "dankmemes")
+db.add_user("trippinthroughtime", "3fYfvg92NkV0U", True)
+crawl_subreddit("trippinthroughtime", "trippinthroughtime")
 
 
 def job(t):

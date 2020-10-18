@@ -29,7 +29,7 @@ def convert_image_to_webp(source_path, dest_path):
 
 
 def apply_ffmpeg_to_stream(stream, ffmpeg_operation, input_file_extension, output_file_extension):
-    tmp_directory_path = "/dev/shm/"
+    tmp_directory_path = "/dev/shm/swepe_crawler/"
     tmp_filename = generate_unique_filename(f'{tmp_directory_path}')
     tmp_src = f'{tmp_directory_path}{tmp_filename}.{input_file_extension}'
     tmp_dst = f'{tmp_directory_path}{tmp_filename}.{output_file_extension}'
