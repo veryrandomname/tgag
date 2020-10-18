@@ -38,7 +38,7 @@ class MyClient:
         return self.conn.recv()
 
     def send_pic(self, stream, username, file_extension, title, show_username):
-        if file_extension in ALLOWED_EXTENSIONS:
+        if file_extension in ALLOWED_EXTENSIONS and stream:
             self.conn.send({'msg': 'send_pic', 'file_extension': file_extension, 'username': username, "title": title,
                             "show_username": show_username, "payload" : stream.getvalue()})
 
