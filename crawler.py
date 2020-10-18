@@ -8,11 +8,45 @@ import shutil
 import sys
 import schedule
 from werkzeug.datastructures import FileStorage
+import praw
 
 import dbclient
-from util import get_file_extension
+from util import get_file_extension, generate_unique_filename, gif_stream_to_mp4_stream, image_stream_to_webp_stream
 
-db = dbclient.MyClient('/home/fabi/PycharmProjects/tgag')
+root_path = '/home/fettundledig/Programmieren/tgag'
+
+db = dbclient.MyClient(root_path)
+
+reddit = praw.Reddit(
+    client_id="9GpL6uM70--UJA",
+    client_secret="O2hIcFUUjpFZbxpytwqEO3WG9JY",
+    user_agent="swepe_meme_downloader:1.0"
+)
+
+
+def crawl_subreddit(subreddit_name, user, limit=20):
+    for submission in reddit.subreddit(subreddit_name).hot(limit=limit):
+        if submission.url and submission.title:
+            print(submission.title)
+            parsed_url = urlparse(submission.url)
+            filename = os.path.basename(parsed_url.path)
+            filename_without_extension, file_extension = os.path.splitext(filename)
+            file_extension = file_extension[1:]
+
+            img_response = requests.get(submission.url, stream=True)
+            stream = BytesIO(img_response.content)
+            if file_extension == "gif":
+                stream = gif_stream_to_mp4_stream(stream)
+                file_extension = "mp4"
+            if file_extension in tuple('jpg jpe jpeg png'.split()):
+                stream = image_stream_to_webp_stream(stream, file_extension)
+                file_extension = "webp"
+
+            db.send_pic(stream, user, file_extension, submission.title, False)
+
+
+db.add_user("dankmemes", "password", True)
+crawl_subreddit("dankmemes", "dankmemes")
 
 
 def job(t):
@@ -48,6 +82,5 @@ def job(t):
             out_file = BytesIO(img_response.content)
             db.send_pic(out_file, "cockblockula", file_extension, title, False)
 
-
-job(0)
+# job(0)
 # schedule.every().day.at("6:00").do(job, 'downloading memes')

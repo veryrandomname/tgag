@@ -37,6 +37,7 @@ if not picture_dict:
 
 
 def add_rating(itemID, userID, rating):
+    user_has_rated(userID, itemID)
     ratings_dict[userID][itemID] = rating
 
 
@@ -152,12 +153,12 @@ def handle_msg(msg, conn):
             old_username = msg["old_username"]
             new_username = msg["username"]
             user_dict[new_username] = {"hashed_password": hash_password(password),
-                                          "memes_rated": user_dict[old_username]["memes_rated"],
-                                       "registered" : True}
+                                       "memes_rated": user_dict[old_username]["memes_rated"],
+                                       "registered": True}
             ratings_dict[new_username] = ratings_dict[old_username]
             del ratings_dict[old_username]
             del user_dict[old_username]
-            #for itemID, pic in picture_dict["pictures"].items():
+            # for itemID, pic in picture_dict["pictures"].items():
             #    pic["username"] = new_username
     elif m == "get_user":
         if "username" in msg and msg["username"] in user_dict:
@@ -166,7 +167,6 @@ def handle_msg(msg, conn):
             conn.send(None)
     elif m == "send_rating":
         if "username" in msg and "item" in msg and "rating" in msg:
-            user_has_rated(msg["username"], msg["item"])
             add_rating(msg["item"], msg["username"], msg["rating"])
     elif m == "get_top_n":
         if "username" in msg:
@@ -181,9 +181,12 @@ def handle_msg(msg, conn):
     elif m == "send_pic":
         if "filename" in msg and "username" in msg and "title" in msg and "show_username" in msg:
             itemID = picture_dict["n"]
-            picture_dict["pictures"][itemID] = {"filename": msg["filename"], "username": msg["username"], "title" : msg["title"], "show_username" : msg["show_username"]}
+            picture_dict["pictures"][itemID] = {"filename": msg["filename"], "username": msg["username"],
+                                                "title": msg["title"], "show_username": msg["show_username"]}
             picture_dict["unknown_pictures"][itemID] = True
             picture_dict["n"] += 1
+            add_rating(itemID, msg["username"], 2)
+
     elif m == "get_upload_overview":
         if "username" in msg:
             conn.send(

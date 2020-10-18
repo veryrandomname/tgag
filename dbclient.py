@@ -4,16 +4,9 @@ import shutil
 import string
 from multiprocessing.connection import Client
 
-ALLOWED_EXTENSIONS = tuple('jpg jpe jpeg png webp webm mp4 gif'.split())
+from util import generate_unique_filename
 
-
-# path has to have a trailing slash /
-def generate_unique_filename(path):
-    filename = ''.join(random.choices(string.ascii_lowercase, k=15))
-    if os.path.isfile(path + filename):
-        return generate_unique_filename(path)
-    else:
-        return filename
+ALLOWED_EXTENSIONS = tuple('jpg jpe jpeg png webp webm mp4'.split())
 
 
 class MyClient:

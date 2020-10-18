@@ -14,7 +14,7 @@ from util import get_file_extension
 
 app = Flask(__name__)
 app.secret_key = b'as90dhjaSJAaAsafgAF6a6aa36as4DA1'
-
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB
 
 def get_db():
     """Opens a new database connection if there is none yet for the
@@ -51,7 +51,7 @@ def close_db(exception):
         g.db.tear_down_connection()
 
 
-ALLOWED_EXTENSIONS = tuple('jpg jpe jpeg png webp webm mp4 gif'.split())
+ALLOWED_EXTENSIONS = tuple('jpg jpe jpeg png webp webm mp4'.split())
 
 
 def allowed_file(filename):
