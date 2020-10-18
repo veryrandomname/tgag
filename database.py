@@ -4,6 +4,7 @@ import os.path
 import pickle
 import shutil
 import signal
+from io import BytesIO
 from multiprocessing.connection import Listener
 from threading import Thread
 
@@ -190,12 +191,12 @@ def handle_msg(msg, conn):
         else:
             conn.send(None)
     elif m == "send_pic":
-        if "file_extension" in msg and "username" in msg and "title" in msg and "show_username" in msg and "stream" in msg:
+        if "file_extension" in msg and "username" in msg and "title" in msg and "show_username" in msg and "payload" in msg:
             file_extension = msg["file_extension"]
             filename = generate_unique_filename(config["root_path"] + "/uploads/")
             full_filename = f"{filename}.{file_extension}"
             with open(config["root_path"] + "/uploads/" + full_filename, 'wb') as f:
-                shutil.copyfileobj(msg["stream"], f)
+                shutil.copyfileobj(BytesIO(msg["payload"]), f)
             if file_extension == "webm" or file_extension == "mp4":
                 create_thumbnail(filename)
 
@@ -234,7 +235,7 @@ def on_new_client(conn):
             break
 
 
-address = ('0.0.0.0', 6000)  # family is deduced to be 'AF_INET'
+address = ('localhost', 6000)  # family is deduced to be 'AF_INET'
 listener = Listener(address, authkey=config["database"]["password"].encode())
 
 

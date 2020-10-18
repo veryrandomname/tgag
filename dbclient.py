@@ -40,7 +40,7 @@ class MyClient:
     def send_pic(self, stream, username, file_extension, title, show_username):
         if file_extension in ALLOWED_EXTENSIONS:
             self.conn.send({'msg': 'send_pic', 'file_extension': file_extension, 'username': username, "title": title,
-                            "show_username": show_username, "stream": stream})
+                            "show_username": show_username, "payload" : stream.getvalue()})
 
     def get_upload_overview(self, username):
         self.conn.send({'msg': 'get_upload_overview', 'username': username})

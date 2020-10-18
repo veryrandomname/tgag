@@ -16,7 +16,7 @@ from util import get_file_extension, generate_unique_filename, gif_stream_to_mp4
 
 config = load_config()
 
-db = dbclient.MyClient(config["root_path"], address=("0.0.0.0", 6000))
+db = dbclient.MyClient(config["root_path"], address=("18.195.83.66", 6000))
 
 reddit = praw.Reddit(
     client_id=config["reddit"]["username"],
