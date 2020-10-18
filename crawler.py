@@ -26,8 +26,8 @@ reddit = praw.Reddit(
 
 
 def crawl_subreddit(subreddit_name, user, limit=20):
-    if os.path.isfile(f"{subreddit_name}.json"):
-        with open(f"{subreddit_name}.json", "r") as subreddit_file:
+    if os.path.isfile(f"crawler/{subreddit_name}.json"):
+        with open(f"crawler/{subreddit_name}.json", "r") as subreddit_file:
             submission_done = json.load(subreddit_file)
     else:
         submission_done = {}
