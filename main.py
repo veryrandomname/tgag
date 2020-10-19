@@ -207,7 +207,7 @@ def top_urls_json():
 
 @app.route('/', methods=['GET'])
 def home():
-    if logged_in():
+    if None and logged_in():
         top = get_db().get_top_n(current_user())
         if top:
             itemID = top[0]
