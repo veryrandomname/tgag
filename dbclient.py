@@ -3,6 +3,7 @@ import os
 import random
 import shutil
 import string
+from io import BytesIO
 from multiprocessing.connection import Client
 
 from util import generate_unique_filename, load_config
@@ -40,7 +41,7 @@ class MyClient:
     def send_pic(self, stream, username, file_extension, title, show_username):
         if file_extension in ALLOWED_EXTENSIONS and stream:
             self.conn.send({'msg': 'send_pic', 'file_extension': file_extension, 'username': username, "title": title,
-                            "show_username": show_username, "payload" : stream.getvalue()})
+                            "show_username": show_username, "payload" : stream.read()})
 
     def get_upload_overview(self, username):
         self.conn.send({'msg': 'get_upload_overview', 'username': username})

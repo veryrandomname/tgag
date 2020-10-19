@@ -16,7 +16,7 @@ from util import get_file_extension, generate_unique_filename, gif_stream_to_mp4
 
 config = load_config()
 
-db = dbclient.MyClient(config["root_path"], address=("18.195.83.66", 6000))
+db = dbclient.MyClient(config["root_path"], address=("localhost", 6000))
 
 reddit = praw.Reddit(
     client_id=config["reddit"]["username"],
@@ -25,15 +25,17 @@ reddit = praw.Reddit(
 )
 
 
-def crawl_subreddit(subreddit_name, user, limit=20):
-    if os.path.isfile(f"crawler/{subreddit_name}.json"):
+def crawl_subreddit(subreddit_name, user, limit=20, debug = True):
+    subreddit = config["subreddits"][subreddit_name]
+    db.add_user(subreddit_name, subreddit["password"], True)
+    if os.path.isfile(f"crawler/{subreddit_name}.json") and not debug:
         with open(f"crawler/{subreddit_name}.json", "r") as subreddit_file:
             submission_done = json.load(subreddit_file)
     else:
         submission_done = {}
 
     try:
-        for submission in reddit.subreddit(subreddit_name).hot(limit=limit):
+        for submission in reddit.subreddit(subreddit_name).top(limit=limit):
             if submission.url and submission.title and submission.id not in submission_done:
                 try:
                     print(submission.title)
@@ -53,15 +55,17 @@ def crawl_subreddit(subreddit_name, user, limit=20):
 
                     db.send_pic(stream, user, file_extension, submission.title, False)
                 finally:
-                    submission_done[submission.id] = True
+                    if not debug:
+                        submission_done[submission.id] = True
 
     finally:
-        with open(f"crawler/{subreddit_name}.json", 'w') as outfile:
-            json.dump(submission_done, outfile)
+        if not debug:
+            with open(f"crawler/{subreddit_name}.json", 'w') as outfile:
+                json.dump(submission_done, outfile)
 
 
-for subreddit in config["subreddits"]:
-    subreddit_name = subreddit["name"]
+for subreddit_name, subreddit in config["subreddits"].items():
     db.add_user(subreddit_name, subreddit["password"], True)
-    crawl_subreddit(subreddit_name,subreddit_name, 1000)
+    crawl_subreddit(subreddit_name, subreddit_name, 2)
+
 
