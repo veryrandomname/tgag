@@ -16,7 +16,7 @@ from util import get_file_extension, generate_unique_filename, gif_stream_to_mp4
 
 config = load_config()
 
-db = dbclient.MyClient(config["root_path"], address=("localhost", 6000))
+db = dbclient.MyClient(config["root_path"], address=("18.195.83.66", 6000))
 
 reddit = praw.Reddit(
     client_id=config["reddit"]["username"],
@@ -35,7 +35,7 @@ def crawl_subreddit(subreddit_name, user, limit=20, debug = True):
         submission_done = {}
 
     try:
-        for submission in reddit.subreddit(subreddit_name).top(limit=limit):
+        for submission in reddit.subreddit(subreddit_name).top("day", limit=limit):
             if submission.url and submission.title and submission.id not in submission_done:
                 try:
                     print(submission.title)
@@ -66,6 +66,6 @@ def crawl_subreddit(subreddit_name, user, limit=20, debug = True):
 
 for subreddit_name, subreddit in config["subreddits"].items():
     db.add_user(subreddit_name, subreddit["password"], True)
-    crawl_subreddit(subreddit_name, subreddit_name, 2)
+    crawl_subreddit(subreddit_name, subreddit_name, limit=50, debug=False)
 
 
