@@ -18,14 +18,8 @@ config = load_config()
 
 db = dbclient.MyClient(config["root_path"], address=("18.195.83.66", 6000))
 
-reddit = praw.Reddit(
-    client_id=config["reddit"]["username"],
-    client_secret=config["reddit"]["password"],
-    user_agent="swepe_meme_downloader:1.0"
-)
 
-
-def crawl_subreddit(subreddit_name, user, limit=20, debug = True):
+def crawl_subreddit(reddit, subreddit_name, user, limit=20, debug = True):
     subreddit = config["subreddits"][subreddit_name]
     db.add_user(subreddit_name, subreddit["password"], True)
     if os.path.isfile(f"crawler/{subreddit_name}.json") and not debug:
@@ -64,8 +58,34 @@ def crawl_subreddit(subreddit_name, user, limit=20, debug = True):
                 json.dump(submission_done, outfile)
 
 
-for subreddit_name, subreddit in config["subreddits"].items():
-    db.add_user(subreddit_name, subreddit["password"], True)
-    crawl_subreddit(subreddit_name, subreddit_name, limit=50, debug=False)
+def crawl_subreddits():
+    reddit = praw.Reddit(
+        client_id=config["reddit"]["username"],
+        client_secret=config["reddit"]["password"],
+        user_agent="swepe_meme_downloader:1.0"
+    )
+
+    for subreddit_name, subreddit in config["subreddits"].items():
+        db.add_user(subreddit_name, subreddit["password"], True)
+        crawl_subreddit(reddit, subreddit_name, subreddit_name, limit=subreddit.get("max_posts", 25), debug=False)
 
 
+crawl_subreddits()
+
+from nineapi.client import Client, APIException
+
+def crawl_gag():
+    # app.py
+
+
+    client = Client()
+
+    try:
+        client.log_in('idownloadpeople@outlook.com', 'UMhHJna7VeVLRHA')
+    except APIException as e:
+        print('Failed to log in:', e)
+    else:
+        for post in client.get_posts():
+            print(post)
+
+#crawl_gag()

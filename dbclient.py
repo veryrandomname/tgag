@@ -51,6 +51,10 @@ class MyClient:
         self.conn.send(
             {'msg': 'merge_user', 'username': new_username, 'password': password, 'old_username': old_username})
 
+    def report(self, itemID, username, reason = 0):
+        self.conn.send(
+            {'msg': 'report', 'itemID': itemID, 'username': username, 'reason': reason})
+
     def tear_down_connection(self):
         self.conn.close()
 

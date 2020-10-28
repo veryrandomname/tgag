@@ -16,6 +16,7 @@ from util import load_config, generate_unique_filename
 
 config = load_config()
 
+
 def save_obj(obj, name):
     with open(name + '.pkl', 'wb') as f:
         pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
@@ -40,6 +41,17 @@ if not user_dict:
 picture_dict = load_obj("pictures")
 if not picture_dict:
     picture_dict = {"n": 0, "unknown_pictures": {}, "pictures": {}}
+
+reports = load_obj("pictures")
+if not reports:
+    reports = {}
+
+
+def report(itemID, userID, reason=0):
+    if itemID not in reports:
+        reports[itemID] = {}
+
+    reports[itemID][userID] = reason
 
 
 def add_rating(itemID, userID, rating):
@@ -146,7 +158,7 @@ def add_user(username, password, registered):
 def create_thumbnail(full_filename):
     if not os.path.isfile(f"{config['root_path']}/thumbnails/{full_filename}.webp"):
         os.system(
-             f"ffmpeg -i {config['root_path']}/uploads/{full_filename} -ss 00:00:00.000 -vframes 1 {config['root_path']}/thumbnails/{full_filename}.webp")
+            f"ffmpeg -i {config['root_path']}/uploads/{full_filename} -ss 00:00:00.000 -vframes 1 {config['root_path']}/thumbnails/{full_filename}.webp")
 
 
 def handle_msg(msg, conn):
@@ -214,7 +226,9 @@ def handle_msg(msg, conn):
                  pic["username"] == msg["username"]])
         else:
             conn.send(None)
-
+    elif m == "report":
+        if "itemID" in msg and "userID" in msg:
+            report(msg["itemID"], msg["userID"], msg.get("reason"))
     elif m == "save":
         save()
 
@@ -243,6 +257,7 @@ def save():
     save_obj(ratings_dict, "ratings")
     save_obj(picture_dict, "pictures")
     save_obj(user_dict, "users")
+    save_obj(reports, "reports")
 
 
 def exit_handler():
