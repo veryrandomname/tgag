@@ -336,12 +336,12 @@ def logout():
 
 
 
-@app.route('/report')
+@app.route('/report', methods=['POST'])
 def report():
     if logged_in():
         itemID = int(request.json['itemID'])
         get_db().report(itemID, current_user(), request.json.get('reason'))
-
+    return jsonify()
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")

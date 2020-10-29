@@ -42,7 +42,7 @@ picture_dict = load_obj("pictures")
 if not picture_dict:
     picture_dict = {"n": 0, "unknown_pictures": {}, "pictures": {}}
 
-reports = load_obj("pictures")
+reports = load_obj("reports")
 if not reports:
     reports = {}
 
@@ -227,8 +227,8 @@ def handle_msg(msg, conn):
         else:
             conn.send(None)
     elif m == "report":
-        if "itemID" in msg and "userID" in msg:
-            report(msg["itemID"], msg["userID"], msg.get("reason"))
+        if "itemID" in msg and "username" in msg:
+            report(msg["itemID"], msg["username"], msg.get("reason"))
     elif m == "save":
         save()
 
