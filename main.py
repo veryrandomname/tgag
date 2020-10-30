@@ -7,6 +7,7 @@ from flask import (Flask, render_template, g, send_from_directory, flash)
 from flask import jsonify
 from flask import request, session, redirect, url_for, escape
 import os
+from flaskext.markdown import Markdown
 
 from werkzeug.utils import secure_filename
 
@@ -16,6 +17,8 @@ from util import get_file_extension, load_config
 app = Flask(__name__)
 app.secret_key = load_config()["flask"]["password"].encode()
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB
+Markdown(app)
+
 
 def get_db():
     """Opens a new database connection if there is none yet for the
@@ -342,6 +345,16 @@ def report():
         itemID = int(request.json['itemID'])
         get_db().report(itemID, current_user(), request.json.get('reason'))
     return jsonify()
+
+
+@app.route('/tos')
+def tos():
+    return render_template("tos.html")
+
+@app.route('/pp')
+def pp():
+    return render_template("pp.html")
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")
