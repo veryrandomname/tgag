@@ -71,21 +71,3 @@ def crawl_subreddits():
 
 
 crawl_subreddits()
-
-from nineapi.client import Client, APIException
-
-def crawl_gag():
-    # app.py
-
-
-    client = Client()
-
-    try:
-        client.log_in('idownloadpeople@outlook.com', 'UMhHJna7VeVLRHA')
-    except APIException as e:
-        print('Failed to log in:', e)
-    else:
-        for post in client.get_posts():
-            print(post)
-
-#crawl_gag()

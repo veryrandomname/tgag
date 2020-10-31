@@ -155,7 +155,7 @@ def my_uploads_app():
         # uploads_with_urls = [{ "itemID": itemID, "url": photos.url(filename), "rating" : rating } for (itemID, filename, rating) in users_uploads]
         return jsonify({"my_uploads": get_better_upload_overview(current_user())})
     else:
-        return "you not logged in brotha", 500
+        return jsonify(), 401
 
 
 @app.route('/top_json')
@@ -164,7 +164,7 @@ def top_json():
         top = get_db().get_top_n(current_user())
         return jsonify({"top_rec": top})
     else:
-        return "Error", 500
+        return jsonify(), 401
 
 
 def file_extension(filename):
@@ -205,7 +205,7 @@ def top_urls_json():
         urls = [get_item_info(itemID) for itemID in top]
         return jsonify({"top_rec": urls})
     else:
-        return "Error", 500
+        return jsonify(), 401
 
 
 @app.route('/', methods=['GET'])
