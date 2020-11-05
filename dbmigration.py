@@ -16,22 +16,31 @@ def load_obj(name):
         return None
 
 
-
-ratings_dict = load_obj("ratings")
-new_ratings_dict = {}
-
+ratings = load_obj("ratings")
 users = load_obj("users")
-for userID in users:
-    new_ratings_dict[userID] = {}
+pictures = load_obj("pictures")
 
-if ratings_dict:
-    for i in range(len(ratings_dict["itemID"])):
-        itemID = ratings_dict["itemID"][i]
-        userID = ratings_dict["userID"][i]
-        rating = ratings_dict["rating"][i]
+print(ratings)
+print(users)
+print(pictures)
 
-        if userID not in new_ratings_dict:
-            new_ratings_dict[userID] = {}
-        new_ratings_dict[userID][itemID] = rating
+it = list(ratings.items())
+for username, rating in it:
+    del ratings[username]
+    ratings[username.lower()] = rating
 
-    save_obj(new_ratings_dict, "rating_migration")
+it = list(users.items())
+for username, user in it:
+    del users[username]
+    users[username.lower()] = user
+
+for itemID, picture in pictures["pictures"].items():
+    picture["username"] = picture["username"].lower()
+
+save_obj(ratings, "ratings")
+save_obj(users, "users")
+save_obj(pictures, "pictures")
+
+print(ratings)
+print(users)
+print(pictures)

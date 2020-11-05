@@ -163,6 +163,10 @@ def create_thumbnail(full_filename):
 
 def handle_msg(msg, conn):
     m = msg["msg"]
+
+    if "username" in msg:
+        msg["username"] = msg["username"].lower()
+
     if m == "add_user":
         if "username" in msg and "password" in msg and msg["username"] not in user_dict:
             if "registered" in msg:
