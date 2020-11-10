@@ -1,7 +1,7 @@
 import os
 from io import BytesIO
 from urllib.parse import urlparse
-
+from pathlib import Path
 import requests
 import json
 import shutil
@@ -35,7 +35,7 @@ def crawl_subreddit(reddit, subreddit_name, user, limit=20, debug = True):
                     print(submission.title)
                     parsed_url = urlparse(submission.url)
                     filename = os.path.basename(parsed_url.path)
-                    filename_without_extension, file_extension = os.path.splitext(filename)
+                    filename_ggkjjwithout_extension, file_extension = os.path.splitext(filename)
                     file_extension = file_extension[1:]
 
                     img_response = requests.get(submission.url, stream=True)
@@ -70,4 +70,5 @@ def crawl_subreddits():
         crawl_subreddit(reddit, subreddit_name, subreddit_name, limit=subreddit.get("max_posts", 25), debug=False)
 
 
+Path("/dev/shm/swepe_crawler/").mkdir(parents=False, exist_ok=True)
 crawl_subreddits()
